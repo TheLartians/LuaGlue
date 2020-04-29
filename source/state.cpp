@@ -135,7 +135,7 @@ namespace glue {
           bool visit(AnyFunction f) override {
             result = sol::make_object(state, [f = std::move(f)](sol::variadic_args vargs) {
               revisited::AnyArguments args;
-              for (auto && arg : vargs) {
+              for (auto &&arg : vargs) {
                 args.push_back(solToAny(sol::object(arg)));
               }
               return anyToSol(vargs.lua_state(), f.call(args));
