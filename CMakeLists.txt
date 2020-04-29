@@ -54,10 +54,9 @@ if (lua_ADDED)
   )
 
   if(ANDROID)
-    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
-  elseif(EMSCRIPTEN)
-    # no posix support
-  else()
+  target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
+  elseif(EMSCRIPTEN OR WIN32)
+  elseif(UNIX OR APPLE)
     target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
   endif()
 
