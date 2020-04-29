@@ -6,16 +6,14 @@ namespace glue {
   namespace lua {
 
     class State {
-      private:
-
+    private:
       struct Data;
       std::shared_ptr<Data> data;
-      
-      public:
 
+    public:
       State();
       ~State();
     };
 
-  }
-}
+  }  // namespace lua
+}  // namespace glue

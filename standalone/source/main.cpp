@@ -3,7 +3,6 @@
 #include <string>
 #include <unordered_map>
 
-
 int main(int argc, char** argv) {
   cxxopts::Options options(argv[0], "A program to welcome the world!");
 

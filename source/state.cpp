@@ -2,10 +2,6 @@
 
 using namespace glue;
 
-lua::State::State() {
-  
-}
+lua::State::State() {}
 
-lua::State::~State() {
-  
-}
+lua::State::~State() {}
