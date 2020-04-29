@@ -119,7 +119,7 @@ TEST_CASE("Run file") {
   std::string sourcePath = __FILE__;
   std::string dirPath = sourcePath.substr(0, sourcePath.rfind(slash));
   glue::lua::State state;
-  CHECK(state.runFile(dirPath + "/" + "test.lua").get<std::string>() == "Hello Lua!");
+  CHECK(state.runFile(dirPath + slash + "test.lua").get<std::string>() == "Hello Lua!");
   CHECK_THROWS_AS(state.runFile("this file does not exist"), std::runtime_error);
 }
 
