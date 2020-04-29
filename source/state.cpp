@@ -42,7 +42,7 @@ namespace glue {
           for (auto &arg : args) {
             anyToSol(data.lua_state(), arg).push();
           }
-          lua_call(data.lua_state(), args.size(), 1);
+          lua_call(data.lua_state(), int(args.size()), 1);
           return solToAny(sol::stack::pop<sol::object>(data.lua_state()));
         }
       };
