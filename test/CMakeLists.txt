@@ -52,7 +52,7 @@ if (NOT TEST_INSTALLED_VERSION)
     target_compile_options(LuaGlue PUBLIC -Wall -pedantic -Wextra -Werror)
   elseif(MSVC)
     target_compile_options(LuaGlue PUBLIC /W4 /WX)
-    target_compile_definitions(LuaGlueTests PUBLIC DOCTEST_CONFIG_USE_STD_HEADERS)
+    target_compile_definitions(LuaGlueTests PUBLIC DOCTEST_CONFIG_USE_STD_HEADERS _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
   endif()
 endif()
 
