@@ -21,7 +21,7 @@ CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
   VERSION 1.0
-  GIT_TAG 0cb0eedf0c2d5c534b97ff60c057f28e3b28bc49
+  GIT_TAG 859faed5d24f5c3b3c0100b3e90336710d771632
 )
 
 # PackageProject.cmake will be used to make our target installable
@@ -72,6 +72,19 @@ if (lua_ADDED)
   set(ADDITIONAL_GLUE_DEPENDENCIES "LuaForGlue")
 endif()
 
+CPMAddPackage(
+  NAME sol2
+  URL https://github.com/ThePhD/sol2/archive/v3.0.2.zip
+  VERSION 3.2.0
+  DOWNLOAD_ONLY YES
+)
+
+if (sol2_ADDED)
+  add_library(sol2 INTERFACE IMPORTED)
+  target_include_directories(sol2 INTERFACE ${sol2_SOURCE_DIR}/include)
+  target_link_libraries(sol2 INTERFACE lua)
+endif()
+
 # ---- Add source files ----
 
 FILE(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
@@ -86,8 +99,8 @@ set_target_properties(LuaGlue PROPERTIES CXX_STANDARD 17)
 # beeing a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(LuaGlue PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
 
-target_link_libraries(LuaGlue PRIVATE lua)
-target_link_libraries(LuaGlue PUBLIC Glue lua)
+target_link_libraries(LuaGlue PRIVATE lua sol2)
+target_link_libraries(LuaGlue PUBLIC Glue)
 
 target_include_directories(LuaGlue
   PUBLIC
