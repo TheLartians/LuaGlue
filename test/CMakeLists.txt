@@ -18,35 +18,6 @@ include(../cmake/tools.cmake)
 include(../cmake/CPM.cmake)
 
 CPMAddPackage(
-  NAME lua
-  GITHUB_REPOSITORY lua/lua
-  VERSION 5.3.5
-  # lua has no CMakeLists.txt
-  DOWNLOAD_ONLY YES
-)
-
-if (lua_ADDED)
-  FILE(GLOB lua_sources ${lua_SOURCE_DIR}/*.c)
-  FILE(GLOB lua_headers ${lua_SOURCE_DIR}/*.h)
-  add_library(lua ${lua_sources} ${lua_headers})
-  set_target_properties(lua PROPERTIES LINKER_LANGUAGE C)
-
-  target_include_directories(lua
-    PUBLIC
-      $<BUILD_INTERFACE:${lua_SOURCE_DIR}>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  )
-
-  if(ANDROID)
-    target_compile_definitions(lua PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
-  elseif(EMSCRIPTEN)
-    # no posix support
-  else()
-    target_compile_definitions(lua PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
-  endif()
-endif()
-
-CPMAddPackage(
   NAME doctest
   GITHUB_REPOSITORY onqtam/doctest
   GIT_TAG 2.3.7

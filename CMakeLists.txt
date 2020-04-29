@@ -46,7 +46,7 @@ if (lua_ADDED)
   FILE(GLOB lua_sources ${lua_SOURCE_DIR}/*.c)
   FILE(GLOB lua_headers ${lua_SOURCE_DIR}/*.h)
   add_library(LuaForGlue ${lua_sources} ${lua_headers})
-  set_target_properties(lua PROPERTIES LINKER_LANGUAGE C)
+  set_target_properties(LuaForGlue PROPERTIES LINKER_LANGUAGE C)
 
   target_include_directories(LuaForGlue
     PUBLIC
