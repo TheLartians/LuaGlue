@@ -1,7 +1,6 @@
 #include <glue/lua/state.h>
 
 #include <exception>
-#include <iostream>
 #define SOL_PRINT_ERRORS 0
 #include <sol/sol.hpp>
 
@@ -88,14 +87,14 @@ namespace glue {
           return sol::lua_nil;
         }
 
-        struct Visistor
+        struct Visitor
             : revisited::RecursiveVisitor<const int &, const size_t &, double, bool,
                                           const std::string &, std::string, AnyFunction,
                                           const glue::Map &, const LuaMap &, const LuaFunction &> {
           lua_State *state;
           sol::object result;
 
-          Visistor(lua_State *s) : state(s) {}
+          Visitor(lua_State *s) : state(s) {}
 
           bool visit(const int &v) override {
             result = sol::make_object(state, v);
@@ -133,12 +132,12 @@ namespace glue {
           }
 
           bool visit(AnyFunction f) override {
-            result = sol::make_object(state, [f = std::move(f)](sol::variadic_args vargs) {
+            result = sol::make_object(state, [f = std::move(f)](sol::variadic_args vArgs) {
               revisited::AnyArguments args;
-              for (auto &&arg : vargs) {
+              for (auto &&arg : vArgs) {
                 args.push_back(solToAny(sol::object(arg)));
               }
-              return anyToSol(vargs.lua_state(), f.call(args));
+              return anyToSol(vArgs.lua_state(), f.call(args));
             });
             return true;
           }
