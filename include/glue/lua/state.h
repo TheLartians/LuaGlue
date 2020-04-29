@@ -15,31 +15,18 @@ namespace glue {
       std::shared_ptr<Map> globalTable;
 
     public:
-      //    struct Error: public std::exception {
-      //      lua_State * L;
-      //      unsigned stackSize;
-      //      std::shared_ptr<bool> valid;
-      //
-      //      Error(lua_State * l, unsigned stackSize);
-      //      Error();
-      //
-      //      const char * what() const noexcept override;
-      //      ~Error();
-      //    };
-
       /**
        * Create a new lua state and destroys the state after use.
        */
       State();
+      State(lua_State *existing);
       State(const State &other) = delete;
 
-      void openStandardLibs() const;
+      /**
+       * Runs the code from path and returns the returned result as a `Any`.
+       */
+      Any runFile(const std::string &path) const;
 
-      //    /**
-      //     * Runs the code from path and returns the returned result as a `Any`.
-      //     */
-      //    Any runFile(const std::string &path) const;
-      //
       /**
        * Runs the code and returns the returned result as a `Any`.
        */
@@ -61,9 +48,19 @@ namespace glue {
       void collectGarbage() const;
 
       /**
+       * Opens the lua standard libraries
+       */
+      void openStandardLibs() const;
+
+      /**
        * returns the value map of the global table.
        */
       MapValue root() const;
+
+      /**
+       * returns a pointer to the internal lua state
+       */
+      lua_State *getRawLuaState() const;
 
       ~State();
     };

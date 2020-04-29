@@ -171,13 +171,19 @@ namespace glue {
 }  // namespace glue
 
 struct lua::Data {
-  sol::state state;
+  std::unique_ptr<sol::state> owned;
+  sol::state_view state;
   std::shared_ptr<detail::LuaMap> rootMap;
+
+  void init() { rootMap = std::make_shared<detail::LuaMap>(state, state.globals()); }
+
+  Data() : owned(std::make_unique<sol::state>()), state(*owned) { init(); }
+  Data(lua_State *existing) : state(existing) { init(); }
 };
 
-lua::State::State() : data(std::make_shared<Data>()) {
-  data->rootMap = std::make_shared<detail::LuaMap>(data->state, data->state.globals());
-}
+lua::State::State() : data(std::make_shared<Data>()) {}
+
+lua::State::State(lua_State *existing) : data(std::make_shared<Data>(existing)) {}
 
 glue::MapValue lua::State::root() const { return MapValue(data->rootMap); }
 
@@ -188,5 +194,11 @@ void lua::State::collectGarbage() const { data->state.collect_garbage(); }
 Any lua::State::run(const std::string_view &code, const std::string &name) const {
   return detail::solToAny(data->state.script(code, name));
 }
+
+Any lua::State::runFile(const std::string &path) const {
+  return detail::solToAny(data->state.script_file(path));
+}
+
+lua_State *lua::State::getRawLuaState() const { return data->state.lua_state(); }
 
 lua::State::~State() {}

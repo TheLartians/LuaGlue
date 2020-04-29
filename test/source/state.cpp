@@ -1,11 +1,15 @@
 #include <doctest/doctest.h>
 #include <glue/lua/state.h>
 
+#include <exception>
+#include <string>
+
 TEST_CASE("Run script and get result") {
   glue::lua::State state;
   state.openStandardLibs();
   CHECK_NOTHROW(state.run("assert(1==1)"));
   CHECK_THROWS_AS(state.run("assert(1==0)"), std::runtime_error);
+  CHECK_THROWS_AS(state.run("f(syntax error]"), std::runtime_error);
   CHECK(state.get<bool>("true") == true);
   CHECK(state.get<bool>("false") == false);
   CHECK(state.get<int>("2+3") == 5);
@@ -104,4 +108,26 @@ TEST_CASE("Passthrough arguments") {
   CHECK_NOTHROW(state.run("x = {1,2}; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = function() end; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = nil; assert(f(x) == x)"));
+}
+
+TEST_CASE("Run file") {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+  static const std::string slash = "\\";
+#else
+  static const std::string slash = "/";
+#endif
+  std::string sourcePath = __FILE__;
+  std::string dirPath = sourcePath.substr(0, sourcePath.rfind(slash));
+  glue::lua::State state;
+  CHECK(state.runFile(dirPath + "/" + "test.lua").get<std::string>() == "Hello Lua!");
+  CHECK_THROWS_AS(state.runFile("this file does not exist"), std::runtime_error);
+}
+
+TEST_CASE("Share state") {
+  glue::lua::State state;
+  state.root()["x"] = 50;
+  glue::lua::State state2(state.getRawLuaState());
+  CHECK(state2.root()["x"]->get<int>() == 50);
+  state2.root()["x"] = 42;
+  CHECK(state.root()["x"]->get<int>() == 42);
 }
