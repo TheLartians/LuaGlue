@@ -6,6 +6,8 @@ TEST_CASE("Run script and get result") {
   state.openStandardLibs();
   CHECK_NOTHROW(state.run("assert(1==1)"));
   CHECK_THROWS_AS(state.run("assert(1==0)"), std::runtime_error);
+  CHECK(state.get<bool>("true") == true);
+  CHECK(state.get<bool>("false") == false);
   CHECK(state.get<int>("2+3") == 5);
   CHECK(state.get<std::string>("'a' .. 'b'") == "ab");
   CHECK(state.get<glue::AnyFunction>("function(a,b) return a+b end")(2, 3).get<int>() == 5);
@@ -37,6 +39,10 @@ TEST_CASE("Mapped Values") {
     CHECK_NOTHROW(root["y"] = "x");
     CHECK(root["y"]->get<std::string>() == "x");
     CHECK(state.get<std::string>("y") == "x");
+    CHECK_NOTHROW(root["z"] = true);
+    CHECK(root["z"]->get<bool>() == true);
+    CHECK_NOTHROW(root["x"] = size_t(128));
+    CHECK(root["x"]->get<size_t>() == 128);
   }
 
   SUBCASE("callbacks") {
