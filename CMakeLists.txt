@@ -79,12 +79,6 @@ CPMAddPackage(
   DOWNLOAD_ONLY YES
 )
 
-if (sol2_ADDED)
-  add_library(sol2 INTERFACE IMPORTED)
-  target_include_directories(sol2 INTERFACE ${sol2_SOURCE_DIR}/include)
-  target_link_libraries(sol2 INTERFACE lua)
-endif()
-
 # ---- Add source files ----
 
 FILE(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
@@ -93,14 +87,17 @@ FILE(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/
 # ---- Create library ----
 
 add_library(LuaGlue ${headers} ${sources})
-
 set_target_properties(LuaGlue PROPERTIES CXX_STANDARD 17)
 
 # beeing a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(LuaGlue PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
 
-target_link_libraries(LuaGlue PRIVATE lua sol2)
+target_link_libraries(LuaGlue PRIVATE lua)
 target_link_libraries(LuaGlue PUBLIC Glue)
+
+# this will precent sol2 from becomming a dependency for the installed package
+# (there must be a better way)
+target_include_directories(LuaGlue PRIVATE ${sol2_SOURCE_DIR}/include)
 
 target_include_directories(LuaGlue
   PUBLIC
