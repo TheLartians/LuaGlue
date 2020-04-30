@@ -21,7 +21,7 @@ CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
   VERSION 1.0
-  GIT_TAG 859faed5d24f5c3b3c0100b3e90336710d771632
+  GIT_TAG 64a55cb9330afeb5acb4dd29669d1ad0134810fd
 )
 
 # PackageProject.cmake will be used to make our target installable
@@ -79,6 +79,12 @@ CPMAddPackage(
   DOWNLOAD_ONLY YES
 )
 
+CPMAddPackage(
+  NAME EasyIterator
+  VERSION 1.4
+  GIT_REPOSITORY https://github.com/TheLartians/EasyIterator.git
+)
+
 # ---- Add source files ----
 
 FILE(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
@@ -92,12 +98,12 @@ set_target_properties(LuaGlue PROPERTIES CXX_STANDARD 17)
 # beeing a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(LuaGlue PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
 
-target_link_libraries(LuaGlue PRIVATE lua)
+target_link_libraries(LuaGlue PRIVATE lua EasyIterator)
 target_link_libraries(LuaGlue PUBLIC Glue)
 
 # this will precent sol2 from becomming a dependency for the installed package
 # (there must be a better way)
-target_include_directories(LuaGlue PRIVATE ${sol2_SOURCE_DIR}/include)
+target_include_directories(LuaGlue SYSTEM PRIVATE ${sol2_SOURCE_DIR}/include)
 
 target_include_directories(LuaGlue
   PUBLIC

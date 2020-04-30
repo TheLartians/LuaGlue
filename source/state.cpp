@@ -1,3 +1,6 @@
+#include <assert.h>
+#include <easy_iterator.h>
+#include <glue/keys.h>
 #include <glue/lua/state.h>
 
 #include <exception>
@@ -10,8 +13,29 @@ namespace glue {
   namespace lua {
     namespace detail {
 
-      sol::object anyToSol(lua_State *state, const Any &value);
+      using MapCache = std::unordered_map<const glue::Map *, sol::table>;
+
+      sol::object anyToSol(lua_State *state, const Any &value, MapCache *cache = nullptr);
       Any solToAny(sol::object value);
+
+      struct LuaGlueData {
+        Context context;
+      };
+
+      struct LuaGlueInstance : public Any {
+        sol::table classTable;
+      };
+
+      LuaGlueData &getLuaGlueData(sol::state_view state) {
+        sol::table registry = state.registry();
+        constexpr auto key = "LuaGlueData";
+        sol::object data = registry[key];
+        if (!data) {
+          registry[key] = LuaGlueData();
+          data = registry[key];
+        }
+        return data.as<LuaGlueData &>();
+      }
 
       struct LuaMap final : public revisited::DerivedVisitable<LuaMap, glue::Map> {
         lua_State *state;
@@ -82,92 +106,117 @@ namespace glue {
         }
       }
 
-      sol::object anyToSol(lua_State *state, const Any &value) {
+      revisited::AnyArguments solArgsToAnyArgs(sol::variadic_args &vArgs) {
+        revisited::AnyArguments args;
+        for (auto &&arg : vArgs) {
+          args.push_back(solToAny(sol::object(arg)));
+        }
+        return args;
+      }
+
+      struct AnyToSolVisitor
+          : revisited::RecursiveVisitor<
+                const int &, const size_t &, double, bool, const std::string &, std::string,
+                AnyFunction, const glue::Map &, const LuaMap &, const LuaFunction &, sol::object> {
+        lua_State *state;
+        sol::object result;
+        MapCache *cache;
+
+        AnyToSolVisitor(lua_State *s, MapCache *c = nullptr) : state(s), cache(c) {}
+
+        bool visit(sol::object v) override {
+          result = std::move(v);
+          return true;
+        }
+
+        bool visit(const int &v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(const size_t &v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(double v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(bool v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(std::string v) override {
+          result = sol::make_object(state, std::move(v));
+          return true;
+        }
+
+        bool visit(const std::string &v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(const LuaFunction &v) override {
+          result = v.data;
+          return true;
+        }
+
+        bool visit(AnyFunction f) override {
+          result = sol::make_object(state, [f = std::move(f)](sol::variadic_args vArgs) {
+            return anyToSol(vArgs.lua_state(), f.call(solArgsToAnyArgs(vArgs)));
+          });
+          return true;
+        }
+
+        bool visit(const LuaMap &v) override {
+          result = v.table;
+          return true;
+        }
+
+        bool visit(const glue::Map &v) override {
+          if (auto it = cache ? easy_iterator::find(*cache, &v) : nullptr) {
+            result = it->second;
+          } else {
+            sol::table table(state, sol::create);
+            v.forEach([&](auto &&k, auto &&v) {
+              table[k] = anyToSol(state, v, cache);
+              return false;
+            });
+            if (cache) {
+              (*cache)[&v] = table;
+            }
+            result = table;
+          }
+          return true;
+        }
+      };
+
+      sol::object anyToSol(lua_State *state, const Any &value, MapCache *cache) {
         if (!value) {
           return sol::lua_nil;
         }
 
-        struct Visitor
-            : revisited::RecursiveVisitor<const int &, const size_t &, double, bool,
-                                          const std::string &, std::string, AnyFunction,
-                                          const glue::Map &, const LuaMap &, const LuaFunction &> {
-          lua_State *state;
-          sol::object result;
-
-          Visitor(lua_State *s) : state(s) {}
-
-          bool visit(const int &v) override {
-            result = sol::make_object(state, v);
-            return true;
-          }
-
-          bool visit(const size_t &v) override {
-            result = sol::make_object(state, v);
-            return true;
-          }
-
-          bool visit(double v) override {
-            result = sol::make_object(state, v);
-            return true;
-          }
-
-          bool visit(bool v) override {
-            result = sol::make_object(state, v);
-            return true;
-          }
-
-          bool visit(std::string v) override {
-            result = sol::make_object(state, std::move(v));
-            return true;
-          }
-
-          bool visit(const std::string &v) override {
-            result = sol::make_object(state, v);
-            return true;
-          }
-
-          bool visit(const LuaFunction &v) override {
-            result = v.data;
-            return true;
-          }
-
-          bool visit(AnyFunction f) override {
-            result = sol::make_object(state, [f = std::move(f)](sol::variadic_args vArgs) {
-              revisited::AnyArguments args;
-              for (auto &&arg : vArgs) {
-                args.push_back(solToAny(sol::object(arg)));
-              }
-              return anyToSol(vArgs.lua_state(), f.call(args));
-            });
-            return true;
-          }
-
-          bool visit(const LuaMap &v) override {
-            result = v.table;
-            return true;
-          }
-
-          bool visit(const glue::Map &v) override {
-            sol::table table(state, sol::create);
-            v.forEach([&](auto &&k, auto &&v) {
-              table[k] = anyToSol(state, v);
-              return false;
-            });
-            result = table;
-            return true;
-          }
-        } visitor(state);
-
+        AnyToSolVisitor visitor(state, cache);
         if (value.accept(visitor)) {
           return visitor.result;
         } else {
-          return sol::make_object(state, value);
+          auto &data = getLuaGlueData(state);
+          auto instance = data.context.createInstance(value);
+          if (instance) {
+            auto &luaTable = revisited::visitor_cast<LuaMap &>(**instance.classMap);
+            return sol::make_object(state,
+                                    LuaGlueInstance{std::move(instance.data), luaTable.table});
+          } else {
+            return sol::make_object(state, value);
+          }
         }
       }
 
     }  // namespace detail
-
-  }  // namespace lua
+  }    // namespace lua
 }  // namespace glue
 
 struct lua::Data {
@@ -177,11 +226,17 @@ struct lua::Data {
 
   void init() { rootMap = std::make_shared<detail::LuaMap>(state, state.globals()); }
 
-  Data() : owned(std::make_unique<sol::state>()), state(*owned) { init(); }
   Data(lua_State *existing) : state(existing) { init(); }
+  Data() : owned(std::make_unique<sol::state>()), state(*owned) { init(); }
 };
 
-lua::State::State() : data(std::make_shared<Data>()) {}
+lua::State::State() : data(std::make_shared<Data>()) {
+  using Instance = detail::LuaGlueInstance;
+  data->state.new_usertype<Instance>(
+      "LuaGlueInstance", sol::meta_function::index,
+      [](const Instance &value, sol::object key) -> sol::object { return value.classTable[key]; },
+      sol::base_classes, sol::bases<Any>());
+}
 
 lua::State::State(lua_State *existing) : data(std::make_shared<Data>(existing)) {}
 
@@ -202,3 +257,32 @@ Any lua::State::runFile(const std::string &path) const {
 lua_State *lua::State::getRawLuaState() const { return data->state.lua_state(); }
 
 lua::State::~State() {}
+
+void lua::State::addModule(const MapValue &map) {
+  auto r = root();
+
+  // use cache to not create copies of referenced tables
+  detail::MapCache cache;
+  auto convertedMap
+      = Value(detail::solToAny(detail::anyToSol(data->state, map.data, &cache))).asMap();
+  assert(convertedMap);
+
+  auto &luaGlueData = detail::getLuaGlueData(data->state);
+  luaGlueData.context.addRootMap(convertedMap);
+
+  for (auto &&id : luaGlueData.context.uniqueTypes) {
+    auto &&type = luaGlueData.context.types[id];
+    auto map = type.data;
+    auto table = revisited::visitor_cast<detail::LuaMap &>(*map.data).table;
+    if (auto extends = map[keys::extendsKey]) {
+      sol::table metatable(data->state, sol::new_table(1));
+      metatable[sol::meta_function::index] = detail::anyToSol(data->state, *extends);
+      table[sol::metatable_key] = metatable;
+    }
+  }
+
+  convertedMap.forEach([&](auto &&key, auto &&value) {
+    r[key] = value;
+    return false;
+  });
+}

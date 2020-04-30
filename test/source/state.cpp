@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <glue/class.h>
 #include <glue/lua/state.h>
 
 #include <exception>
@@ -130,4 +131,38 @@ TEST_CASE("Share state") {
   CHECK(state2.root()["x"]->get<int>() == 50);
   state2.root()["x"] = 42;
   CHECK(state.root()["x"]->get<int>() == 42);
+}
+
+TEST_CASE("Modules") {
+  struct A {
+    std::string member;
+  };
+
+  struct B : public A {
+    B(std::string value) : A{value} {}
+    int method(int v) { return member.size() + v; }
+  };
+
+  auto module = glue::createAnyMap();
+  auto inner = glue::createAnyMap();
+
+  inner["A"] = glue::createClass<A>().addConstructor<>().addMember("member", &A::member);
+
+  module["inner"] = inner;
+
+  module["B"] = glue::createClass<B>(glue::WithBases<A>())
+                    .addConstructor<std::string>()
+                    .setExtends(inner["A"])
+                    .addMethod("method", &B::method);
+
+  module["createB"] = []() { return B("unnamed"); };
+
+  glue::lua::State state;
+  state.addModule(module);
+
+  CHECK(state.run("local a = inner.A.__new(); a:setMember('testA'); return a:member()")
+            .as<std::string>()
+        == "testA");
+  CHECK(state.run("local b = B.__new('testB'); return b:member()").as<std::string>() == "testB");
+  CHECK(state.run("local b = createB(); return b:member()").as<std::string>() == "unnamed");
 }

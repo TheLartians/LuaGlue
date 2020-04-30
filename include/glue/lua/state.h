@@ -57,6 +57,8 @@ namespace glue {
        */
       MapValue root() const;
 
+      void addModule(const MapValue &map);
+
       /**
        * returns a pointer to the internal lua state
        */
