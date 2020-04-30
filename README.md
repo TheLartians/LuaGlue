@@ -7,7 +7,7 @@
 
 # LuaGlue
 
-Glue bindings for Lua.
+Lua bindings for [glue](https://github.com/TheLartians/Glue).
 
 ## Documentation
 
