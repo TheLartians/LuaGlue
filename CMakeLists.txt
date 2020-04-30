@@ -21,7 +21,6 @@ CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
   VERSION 1.0
-  GIT_TAG 4d64b80470a39ebce2e52ca38ae62b59287267d9
 )
 
 # PackageProject.cmake will be used to make our target installable

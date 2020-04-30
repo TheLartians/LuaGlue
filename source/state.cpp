@@ -271,7 +271,7 @@ void lua::State::addModule(const MapValue &map) {
   luaGlueData.context.addRootMap(convertedMap);
 
   for (auto &&id : luaGlueData.context.uniqueTypes) {
-    auto &&type = luaGlueData.context.types[id];
+    auto &&type = luaGlueData.context.types[id.index];
     auto &&typeMap = type.data;
     auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).table;
     if (auto extends = typeMap[keys::extendsKey]) {

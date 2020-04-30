@@ -8,3 +8,7 @@
 # LuaGlue
 
 Glue bindings for Lua.
+
+## Documentation
+
+Yet to be written. Check the [tests](test/source/state.cpp) for functionality and examples.
