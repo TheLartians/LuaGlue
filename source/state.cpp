@@ -272,7 +272,7 @@ void lua::State::addModule(const MapValue &map) {
 
   for (auto &&id : luaGlueData.context.uniqueTypes) {
     auto &&type = luaGlueData.context.types[id];
-    auto && typeMap = type.data;
+    auto &&typeMap = type.data;
     auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).table;
     if (auto extends = typeMap[keys::extendsKey]) {
       sol::table metatable(data->state, sol::new_table(1));

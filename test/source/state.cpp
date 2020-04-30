@@ -140,7 +140,7 @@ TEST_CASE("Modules") {
 
   struct B : public A {
     B(std::string value) : A{value} {}
-    int method(int v) { return member.size() + v; }
+    int method(int v) { return int(member.size()) + v; }
   };
 
   auto module = glue::createAnyMap();

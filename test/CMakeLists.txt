@@ -49,7 +49,7 @@ set_target_properties(LuaGlueTests PROPERTIES CXX_STANDARD 17)
 # enable compiler warnings
 if (NOT TEST_INSTALLED_VERSION)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_compile_options(LuaGlue PUBLIC -Wall -pedantic -Wextra -Werror)
+    target_compile_options(LuaGlue PUBLIC -Wall -pedantic -Wextra -Wconversion -Werror)
   elseif(MSVC)
     # sol related warnings are disabled as we have no control over the library
     target_compile_options(LuaGlue PUBLIC /W4 /WX /wd4996 /wd4100)
