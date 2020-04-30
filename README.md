@@ -12,3 +12,19 @@ Glue bindings for Lua.
 ## Documentation
 
 Yet to be written. Check the [tests](test/source/state.cpp) for functionality and examples.
+
+## Usage
+
+LuaGlue can be easily integrated through CPM.
+If not added before, this will add the Glue package as well.
+
+```cmake
+CPMAddPackage(
+  NAME LuaGlue
+  # Until release use a current git tag
+  GIT_TAG 98732f7231790b17d5ff7af03371d4086a743b05
+  GITHUB_REPOSITORY TheLartians/LuaGlue
+)
+
+target_link_libraries(myLibrary LuaGlue)
+```
