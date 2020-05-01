@@ -60,7 +60,7 @@ namespace glue {
       struct LuaFunction {
         sol::function data;
 
-        Any operator()(const revisited::AnyArguments &args) const {
+        Any operator()(const AnyArguments &args) const {
           data.push();
           for (auto &arg : args) {
             anyToSol(data.lua_state(), arg).push();
@@ -106,8 +106,8 @@ namespace glue {
         }
       }
 
-      revisited::AnyArguments solArgsToAnyArgs(sol::variadic_args &vArgs) {
-        revisited::AnyArguments args;
+      AnyArguments solArgsToAnyArgs(sol::variadic_args &vArgs) {
+        AnyArguments args;
         for (auto &&arg : vArgs) {
           args.push_back(solToAny(sol::object(arg)));
         }
