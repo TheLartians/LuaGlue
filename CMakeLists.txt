@@ -20,7 +20,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
-  VERSION 1.0
+  VERSION 1.1
 )
 
 # PackageProject.cmake will be used to make our target installable
