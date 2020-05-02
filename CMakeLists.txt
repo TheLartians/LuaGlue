@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 # ---- Project ----
 
 project(LuaGlue 
-  VERSION 1.0
+  VERSION 1.0.1
   LANGUAGES CXX C
 ) 
 
@@ -73,7 +73,7 @@ endif()
 
 CPMAddPackage(
   NAME sol2
-  URL https://github.com/ThePhD/sol2/archive/v3.0.2.zip
+  URL https://github.com/ThePhD/sol2/archive/v3.2.0.zip
   VERSION 3.2.0
   DOWNLOAD_ONLY YES
 )
