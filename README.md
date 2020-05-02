@@ -7,21 +7,23 @@
 
 # LuaGlue
 
-Lua bindings for [glue](https://github.com/TheLartians/Glue).
+Lua bindings for [Glue](https://github.com/TheLartians/Glue).
 
 ## Documentation
 
-Yet to be written. Check the [tests](test/source/state.cpp) for functionality and examples.
+Yet to be written. 
+Check the [API](include/glue/lua/state.h) and [tests](test/source/state.cpp) for functionality and examples.
+For a full example project using TypeScript transpiling to Lua with automatic declarations, see [here](https://github.com/TheLartians/TypeScriptXX).
 
 ## Usage
 
 LuaGlue can be easily integrated through CPM.
-If not added before, this will add the Glue package as well.
+If not available before, this will automatically add a Lua and Glue target as well.
 
 ```cmake
 CPMAddPackage(
   NAME LuaGlue
-  VERSION 0.1
+  VERSION 1.0
   GITHUB_REPOSITORY TheLartians/LuaGlue
 )
 
