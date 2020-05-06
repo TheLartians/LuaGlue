@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 # ---- Project ----
 
-project(LuaGlue 
-  VERSION 1.1
+project(LuaGlue
+  VERSION 1.1.1
   LANGUAGES CXX C
 ) 
 
@@ -20,7 +20,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
-  VERSION 1.2
+  VERSION 1.2.1
 )
 
 # PackageProject.cmake will be used to make our target installable
@@ -86,6 +86,12 @@ CPMAddPackage(
   GIT_REPOSITORY https://github.com/TheLartians/EasyIterator.git
 )
 
+CPMAddPackage(
+  NAME Observe
+  VERSION 3.2
+  GITHUB_REPOSITORY TheLartians/Observe
+)
+
 # ---- Add source files ----
 
 FILE(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
@@ -99,10 +105,9 @@ set_target_properties(LuaGlue PROPERTIES CXX_STANDARD 17)
 # beeing a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(LuaGlue PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
 
-target_link_libraries(LuaGlue PRIVATE lua EasyIterator)
-target_link_libraries(LuaGlue PUBLIC Glue)
-
+target_link_libraries(LuaGlue PRIVATE lua EasyIterator Observe)
 target_include_directories(LuaGlue SYSTEM PRIVATE ${sol2_SOURCE_DIR}/include)
+target_link_libraries(LuaGlue PUBLIC Glue)
 
 target_include_directories(LuaGlue
   PUBLIC
@@ -118,5 +123,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES Glue ${ADDITIONAL_GLUE_DEPENDENCIES}
+  DEPENDENCIES Glue Observe ${ADDITIONAL_GLUE_DEPENDENCIES}
 )
