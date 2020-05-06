@@ -184,3 +184,13 @@ TEST_CASE("Modules") {
   CHECK(state.run("local b = B.__new('testB'); return b:member()")->as<std::string>() == "testB");
   CHECK(state.run("local b = createB(); return b:member()")->as<std::string>() == "unnamed");
 }
+
+TEST_CASE("Lua lifetime") {
+  glue::AnyFunction f;
+  glue::MapValue m;
+  {
+    glue::lua::State state;
+    f = state.get("function() end").asFunction();
+    m = state.get("{a=1, b=2}").asMap();
+  }
+}

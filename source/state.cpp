@@ -2,8 +2,10 @@
 #include <easy_iterator.h>
 #include <glue/keys.h>
 #include <glue/lua/state.h>
+#include <observe/event.h>
 
 #include <exception>
+#include <memory>
 #include <sstream>
 #define SOL_PRINT_ERRORS 0
 #include <sol/sol.hpp>
@@ -21,6 +23,7 @@ namespace glue {
 
       struct LuaGlueData {
         Context context;
+        observe::Event<> onDestroy;
       };
 
       struct LuaGlueInstance : public Any {
@@ -32,24 +35,33 @@ namespace glue {
         constexpr auto key = "LuaGlueData";
         sol::object data = registry[key];
         if (!data) {
-          registry[key] = LuaGlueData();
+          registry[key] = std::make_unique<LuaGlueData>();
           data = registry[key];
         }
         return data.as<LuaGlueData &>();
       }
 
       struct LuaMap final : public revisited::DerivedVisitable<LuaMap, glue::Map> {
-        lua_State *state;
-        sol::table table;
+        sol::main_table data;
+        observe::Event<>::Observer lifetimeObserver;
 
-        LuaMap(lua_State *s, sol::table t) : state(s), table(std::move(t)) {}
+        LuaMap(sol::table t) : data(std::move(t)) {
+          if (data.lua_state())
+            lifetimeObserver = getLuaGlueData(data.lua_state()).onDestroy.createObserver([this]() {
+              data = sol::lua_nil;
+            });
+        }
 
-        Any get(const std::string &key) const { return solToAny(table[key]); }
+        LuaMap(const LuaMap &other) : LuaMap(other.data) {}
 
-        void set(const std::string &key, const Any &value) { table[key] = anyToSol(state, value); }
+        Any get(const std::string &key) const { return solToAny(data[key]); }
+
+        void set(const std::string &key, const Any &value) {
+          data[key] = anyToSol(data.lua_state(), value);
+        }
 
         bool forEach(const std::function<bool(const std::string &)> &callback) const {
-          for (auto &&[k, v] : table) {
+          for (auto &&[k, v] : data) {
             if (k.is<std::string>()) {
               callback(k.as<std::string>());
             }
@@ -59,7 +71,17 @@ namespace glue {
       };
 
       struct LuaFunction {
-        sol::function data;
+        sol::main_function data;
+        observe::Event<>::Observer lifetimeObserver;
+
+        LuaFunction(sol::function d) : data(std::move(d)) {
+          if (data.lua_state())
+            lifetimeObserver = getLuaGlueData(data.lua_state()).onDestroy.createObserver([this]() {
+              data = sol::function();
+            });
+        }
+
+        LuaFunction(const LuaFunction &other) : LuaFunction(other.data) {}
 
         Any operator()(const AnyArguments &args) const {
           data.push();
@@ -92,7 +114,7 @@ namespace glue {
             return v;
           }
           case sol::type::table:
-            return LuaMap(value.lua_state(), value);
+            return LuaMap(value);
           case sol::type::userdata:
           case sol::type::lightuserdata:
             if (value.is<sol::function>()) {
@@ -161,7 +183,7 @@ namespace glue {
         }
 
         bool visit(const LuaFunction &v) override {
-          result = v.data;
+          result = sol::function(state, v.data);
           return true;
         }
 
@@ -173,7 +195,7 @@ namespace glue {
         }
 
         bool visit(const LuaMap &v) override {
-          result = v.table;
+          result = sol::table(state, v.data);
           return true;
         }
 
@@ -209,7 +231,7 @@ namespace glue {
           if (instance) {
             auto &luaTable = revisited::visitor_cast<LuaMap &>(**instance.classMap);
             return sol::make_object(state,
-                                    LuaGlueInstance{std::move(instance.data), luaTable.table});
+                                    LuaGlueInstance{std::move(instance.data), luaTable.data});
           } else {
             return sol::make_object(state, value);
           }
@@ -225,10 +247,13 @@ struct lua::Data {
   sol::state_view state;
   std::shared_ptr<detail::LuaMap> rootMap;
 
-  void init() { rootMap = std::make_shared<detail::LuaMap>(state, state.globals()); }
+  void init() { rootMap = std::make_shared<detail::LuaMap>(state.globals()); }
 
   Data(lua_State *existing) : state(existing) { init(); }
   Data() : owned(std::make_unique<sol::state>()), state(*owned) { init(); }
+  ~Data() {
+    if (owned) detail::getLuaGlueData(*owned).onDestroy.emit();
+  }
 };
 
 lua::State::State() : data(std::make_shared<Data>()) {
@@ -281,7 +306,7 @@ void lua::State::addModule(const MapValue &map, const MapValue &r) {
   for (auto &&id : luaGlueData.context.uniqueTypes) {
     auto &&type = luaGlueData.context.types[id.index];
     auto &&typeMap = type.data;
-    auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).table;
+    auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).data;
     if (auto extends = typeMap[keys::extendsKey]) {
       sol::table metatable(data->state, sol::new_table(1));
       metatable[sol::meta_function::index] = detail::anyToSol(data->state, *extends);
