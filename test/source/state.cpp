@@ -193,4 +193,5 @@ TEST_CASE("Lua lifetime") {
     f = state.get("function() end").asFunction();
     m = state.get("{a=1, b=2}").asMap();
   }
+  // sanitizer will complain unless objects are safely destroyed
 }
