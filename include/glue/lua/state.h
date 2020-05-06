@@ -25,22 +25,22 @@ namespace glue {
       /**
        * Runs the code from path and returns the returned result as a `Any`.
        */
-      Any runFile(const std::string &path) const;
+      Value runFile(const std::string &path) const;
 
       /**
        * Runs the code and returns the returned result as a `Any`.
        */
-      Any run(const std::string_view &code, const std::string &name = "anonymous lua code") const;
+      Value run(const std::string_view &code, const std::string &name = "anonymous lua code") const;
 
       /**
        * Runs the expression and returns the result as a `Any`
        */
-      Any get(const std::string &value) const { return run("return " + value); }
+      Value get(const std::string &value) const { return run("return " + value); }
 
       /**
        * Runs the code and returns the result as `T`
        */
-      template <class T> T get(const std::string &code) const { return get(code).get<T>(); }
+      template <class T> T get(const std::string &code) const { return get(code)->get<T>(); }
 
       /**
        * Runs lua garbage collector
@@ -57,12 +57,21 @@ namespace glue {
        */
       MapValue root() const;
 
-      void addModule(const MapValue &map);
+      /**
+       * adds a module to the target map and registers all contained classes
+       */
+      void addModule(const MapValue &map, const MapValue &target);
+      void addModule(const MapValue &map) { return addModule(map, root()); }
 
       /**
        * returns a pointer to the internal lua state
        */
       lua_State *getRawLuaState() const;
+
+      /**
+       * returns a function to delete lua values
+       */
+      Value getValueDeleter() const;
 
       ~State();
     };
