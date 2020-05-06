@@ -4,6 +4,7 @@
 #include <glue/lua/state.h>
 
 #include <exception>
+#include <sstream>
 #define SOL_PRINT_ERRORS 0
 #include <sol/sol.hpp>
 
@@ -47,10 +48,10 @@ namespace glue {
 
         void set(const std::string &key, const Any &value) { table[key] = anyToSol(state, value); }
 
-        bool forEach(const std::function<bool(const std::string &, const Any &)> &callback) const {
+        bool forEach(const std::function<bool(const std::string &)> &callback) const {
           for (auto &&[k, v] : table) {
             if (k.is<std::string>()) {
-              callback(k.as<std::string>(), solToAny(v));
+              callback(k.as<std::string>());
             }
           }
           return false;
@@ -181,8 +182,8 @@ namespace glue {
             result = it->second;
           } else {
             sol::table table(state, sol::create);
-            v.forEach([&](auto &&k, auto &&v) {
-              table[k] = anyToSol(state, v, cache);
+            v.forEach([&](auto &&k) {
+              table[k] = anyToSol(state, v.get(k), cache);
               return false;
             });
             if (cache) {
@@ -232,10 +233,19 @@ struct lua::Data {
 
 lua::State::State() : data(std::make_shared<Data>()) {
   using Instance = detail::LuaGlueInstance;
+
+  // clang-format off
+  data->state.new_usertype<Any>("Any", sol::meta_function::to_string, [](const Any &value) {
+    std::stringstream stream;
+    stream << value.type().name << '(' << &value << ')';
+    return stream.str();
+  });
+
   data->state.new_usertype<Instance>(
       "LuaGlueInstance", sol::meta_function::index,
       [](const Instance &value, sol::object key) -> sol::object { return value.classTable[key]; },
       sol::base_classes, sol::bases<Any>());
+  // clang-format on
 }
 
 lua::State::State(lua_State *existing) : data(std::make_shared<Data>(existing)) {}
@@ -246,11 +256,11 @@ void lua::State::openStandardLibs() const { data->state.open_libraries(); }
 
 void lua::State::collectGarbage() const { data->state.collect_garbage(); }
 
-Any lua::State::run(const std::string_view &code, const std::string &name) const {
+Value lua::State::run(const std::string_view &code, const std::string &name) const {
   return detail::solToAny(data->state.script(code, name));
 }
 
-Any lua::State::runFile(const std::string &path) const {
+Value lua::State::runFile(const std::string &path) const {
   return detail::solToAny(data->state.script_file(path));
 }
 
@@ -258,9 +268,7 @@ lua_State *lua::State::getRawLuaState() const { return data->state.lua_state(); 
 
 lua::State::~State() {}
 
-void lua::State::addModule(const MapValue &map) {
-  auto r = root();
-
+void lua::State::addModule(const MapValue &map, const MapValue &r) {
   // use cache to not create copies of referenced tables
   detail::MapCache cache;
   auto convertedMap
@@ -285,4 +293,12 @@ void lua::State::addModule(const MapValue &map) {
     r[key] = value;
     return false;
   });
+}
+
+Value lua::State::getValueDeleter() const {
+  return sol::make_object(data->state, [](Any &value) { value.reset(); });
+  // return detail::solToAny(sol::make_object(data->state,[](sol::object value){
+  //   sol::table t = value;
+  //   t["__glue_delete"](value);
+  // })).get<AnyFunction>();
 }

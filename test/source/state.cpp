@@ -68,14 +68,32 @@ TEST_CASE("Mapped Values") {
       A(const A &) = delete;
       ~A() { counter--; }
     };
-    CHECK_NOTHROW(root["a"] = A{43});
-    CHECK(root["a"]->get<const A &>().value == 43);
-    CHECK_NOTHROW(root["a"]->get<A &>().value = 3);
-    CHECK(root["a"]->get<const A &>().value == 3);
-    CHECK(counter == 1);
-    root["a"] = glue::Any();
-    state.collectGarbage();
-    CHECK(counter == 0);
+
+    SUBCASE("create and get values") {
+      CHECK_NOTHROW(root["a"] = A{43});
+      CHECK(root["a"]->get<const A &>().value == 43);
+      CHECK_NOTHROW(root["a"]->get<A &>().value = 3);
+      CHECK(root["a"]->get<const A &>().value == 3);
+      CHECK(counter == 1);
+      root["a"] = glue::Any();
+      state.collectGarbage();
+      CHECK(counter == 0);
+    }
+
+    SUBCASE("to string") {
+      state.openStandardLibs();
+      CHECK_NOTHROW(root["a"] = A{0});
+      CHECK_NOTHROW(state.run("assert(string.find(tostring(a), 'A') ~= nil)"));
+    }
+
+    SUBCASE("delete values") {
+      state.root()["delete"] = state.getValueDeleter();
+      CHECK(counter == 0);
+      CHECK_NOTHROW(root["a"] = A{43});
+      CHECK(counter == 1);
+      CHECK_NOTHROW(state.run("delete(a);"));
+      CHECK(counter == 0);
+    }
   }
 
   SUBCASE("standard library") {
@@ -120,7 +138,7 @@ TEST_CASE("Run file") {
   std::string sourcePath = __FILE__;
   std::string dirPath = sourcePath.substr(0, sourcePath.rfind(slash));
   glue::lua::State state;
-  CHECK(state.runFile(dirPath + slash + "test.lua").get<std::string>() == "Hello Lua!");
+  CHECK(state.runFile(dirPath + slash + "test.lua")->get<std::string>() == "Hello Lua!");
   CHECK_THROWS_AS(state.runFile("this file does not exist"), std::runtime_error);
 }
 
@@ -161,8 +179,8 @@ TEST_CASE("Modules") {
   state.addModule(module);
 
   CHECK(state.run("local a = inner.A.__new(); a:setMember('testA'); return a:member()")
-            .as<std::string>()
+            ->as<std::string>()
         == "testA");
-  CHECK(state.run("local b = B.__new('testB'); return b:member()").as<std::string>() == "testB");
-  CHECK(state.run("local b = createB(); return b:member()").as<std::string>() == "unnamed");
+  CHECK(state.run("local b = B.__new('testB'); return b:member()")->as<std::string>() == "testB");
+  CHECK(state.run("local b = createB(); return b:member()")->as<std::string>() == "unnamed");
 }
