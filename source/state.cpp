@@ -297,8 +297,4 @@ void lua::State::addModule(const MapValue &map, const MapValue &r) {
 
 Value lua::State::getValueDeleter() const {
   return sol::make_object(data->state, [](Any &value) { value.reset(); });
-  // return detail::solToAny(sol::make_object(data->state,[](sol::object value){
-  //   sol::table t = value;
-  //   t["__glue_delete"](value);
-  // })).get<AnyFunction>();
 }
