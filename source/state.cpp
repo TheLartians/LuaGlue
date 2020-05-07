@@ -261,19 +261,50 @@ lua::State::State() : data(std::make_shared<Data>()) {
 
   // clang-format off
   data->state.new_usertype<Any>("Any", 
-    sol::meta_function::to_string, [](const Any &value) {
+    sol::meta_function::to_string, +[](const Any &value) {
       std::stringstream stream;
       stream << value.type().name << '(' << &value << ')';
       return stream.str();
     }
   );
 
+  auto forwardBinaryMetaMethodWithDefault = [](auto  glueName, auto defaultOp){
+    return [glueName, defaultOp](sol::this_state state, const Instance &value, const Instance &other) -> sol::object {
+      if (auto metamethod = value.classTable[glueName]) {
+        return metamethod(detail::anyToSol(state, value), detail::anyToSol(state, other));
+      } else {
+        return sol::make_object(state, defaultOp(value, other));
+      }
+    };
+  };
+
+  auto forwardBinaryMetaMethod = [](auto  glueName){
+    return [glueName](sol::this_state state, const Instance &value, const Instance &other) -> sol::object {
+      if (auto metamethod = value.classTable[glueName]) {
+        return metamethod(detail::anyToSol(state, value), detail::anyToSol(state, other));
+      } else {
+        return sol::global_table(state)["error"]("used unsupported binary operator");
+      }
+    };
+  };
+
   data->state.new_usertype<Instance>("LuaGlueInstance",
     sol::base_classes, sol::bases<Any>(),
-    sol::meta_function::index, [](const Instance &value, sol::object key) -> sol::object { 
+    sol::meta_function::index, +[](const Instance &value, sol::object key) -> sol::object { 
       return value.classTable[key];
     },
-    sol::meta_function::to_string, [](sol::this_state state,const Instance &value) -> sol::object {
+    sol::meta_function::equal_to, forwardBinaryMetaMethodWithDefault(keys::operators::eq, [](auto && a, auto && b){ return &a == &b; }),
+    sol::meta_function::unary_minus, forwardBinaryMetaMethod(keys::operators::unm),
+    sol::meta_function::addition, forwardBinaryMetaMethod(keys::operators::add),
+    sol::meta_function::subtraction, forwardBinaryMetaMethod(keys::operators::sub),
+    sol::meta_function::multiplication, forwardBinaryMetaMethod(keys::operators::mul),
+    sol::meta_function::division, forwardBinaryMetaMethod(keys::operators::div),
+    sol::meta_function::power_of, forwardBinaryMetaMethod(keys::operators::pow),
+    sol::meta_function::less_than, forwardBinaryMetaMethod(keys::operators::lt),
+    sol::meta_function::less_than_or_equal_to, forwardBinaryMetaMethod(keys::operators::le),
+    sol::meta_function::floor_division, forwardBinaryMetaMethod(keys::operators::idiv),
+    sol::meta_function::modulus, forwardBinaryMetaMethod(keys::operators::mod),
+    sol::meta_function::to_string, +[](sol::this_state state,const Instance &value) -> sol::object {
       if (auto toString = value.classTable[keys::operators::tostring]) {
         return value.classTable[keys::operators::tostring](detail::anyToSol(state, value));
       } else {

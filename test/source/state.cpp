@@ -172,6 +172,8 @@ TEST_CASE("Modules") {
                     .addConstructor<std::string>()
                     .setExtends(inner["A"])
                     .addMethod("method", &B::method)
+                    .addMethod(glue::keys::operators::eq,
+                               [](const B &a, const B &b) { return a.member == b.member; })
                     .addMethod(glue::keys::operators::tostring,
                                [](const B &b) { return "B(" + b.member + ")"; });
 
@@ -181,12 +183,25 @@ TEST_CASE("Modules") {
   state.openStandardLibs();
   state.addModule(module);
 
-  CHECK(state.run("local a = inner.A.__new(); a:setMember('testA'); return a:member()")
-            ->as<std::string>()
-        == "testA");
-  CHECK(state.run("local b = B.__new('testB'); return b:member()")->as<std::string>() == "testB");
-  CHECK(state.run("local b = createB(); return b:member()")->as<std::string>() == "unnamed");
-  CHECK(state.run("local b = createB(); return tostring(b)")->as<std::string>() == "B(unnamed)");
+  SUBCASE("methods") {
+    CHECK(state.run("local a = inner.A.__new(); a:setMember('testA'); return a:member()")
+              ->as<std::string>()
+          == "testA");
+    CHECK(state.run("local b = B.__new('testB'); return b:member()")->as<std::string>() == "testB");
+    CHECK(state.run("local b = createB(); return b:member()")->as<std::string>() == "unnamed");
+  }
+
+  SUBCASE("operators") {
+    CHECK_NOTHROW(state.run("local a = inner.A.__new(); return tostring(a)")->get<std::string>());
+    CHECK(state.run("local b = createB(); return tostring(b)")->as<std::string>() == "B(unnamed)");
+
+    CHECK_NOTHROW(state.run("local a = inner.A.__new(); assert(a == a);"));
+    CHECK_NOTHROW(
+        state.run("local a = inner.A.__new(); local b = inner.A.__new(); assert(not (a == b));"));
+    CHECK_NOTHROW(state.run("local a = B.__new('A'); local b = B.__new('A'); assert(a == b);"));
+    CHECK_NOTHROW(
+        state.run("local a = B.__new('A'); local b = B.__new('B'); assert(not (a == b));"));
+  }
 }
 
 TEST_CASE("Lua lifetime") {
