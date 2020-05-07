@@ -24,7 +24,7 @@ void exampleBasics() {
   glue::lua::State state;
   state.openStandardLibs();
 
-  // run JS code
+  // run Lua code
   state.run("print('Hello Lua!')");
 
   // extract values
@@ -43,7 +43,7 @@ void exampleBasics() {
   global["x"] = 42;
   global["square"] = [](double x){ return x*x; };
   
-  // interact with JS directly
+  // interact with Lua directly
   state.run("print(square(x))");
   // or using Glue
   global["print"](global["square"](global["x"]));
