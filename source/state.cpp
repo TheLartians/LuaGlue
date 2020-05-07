@@ -27,7 +27,7 @@ namespace glue {
       };
 
       struct LuaGlueInstance : public Any {
-        sol::table classTable;
+        sol::main_table classTable;
       };
 
       LuaGlueData &getLuaGlueData(sol::state_view state) {
@@ -260,16 +260,29 @@ lua::State::State() : data(std::make_shared<Data>()) {
   using Instance = detail::LuaGlueInstance;
 
   // clang-format off
-  data->state.new_usertype<Any>("Any", sol::meta_function::to_string, [](const Any &value) {
-    std::stringstream stream;
-    stream << value.type().name << '(' << &value << ')';
-    return stream.str();
-  });
+  data->state.new_usertype<Any>("Any", 
+    sol::meta_function::to_string, [](const Any &value) {
+      std::stringstream stream;
+      stream << value.type().name << '(' << &value << ')';
+      return stream.str();
+    }
+  );
 
-  data->state.new_usertype<Instance>(
-      "LuaGlueInstance", sol::meta_function::index,
-      [](const Instance &value, sol::object key) -> sol::object { return value.classTable[key]; },
-      sol::base_classes, sol::bases<Any>());
+  data->state.new_usertype<Instance>("LuaGlueInstance",
+    sol::base_classes, sol::bases<Any>(),
+    sol::meta_function::index, [](const Instance &value, sol::object key) -> sol::object { 
+      return value.classTable[key];
+    },
+    sol::meta_function::to_string, [](sol::this_state state,const Instance &value) -> sol::object {
+      if (auto toString = value.classTable[keys::operators::tostring]) {
+        return value.classTable[keys::operators::tostring](detail::anyToSol(state, value));
+      } else {
+        std::stringstream stream;
+        stream << value.type().name << '(' << &value << ')';
+        return sol::make_object(state, stream.str());
+      }
+    }
+  );
   // clang-format on
 }
 

@@ -171,11 +171,14 @@ TEST_CASE("Modules") {
   module["B"] = glue::createClass<B>(glue::WithBases<A>())
                     .addConstructor<std::string>()
                     .setExtends(inner["A"])
-                    .addMethod("method", &B::method);
+                    .addMethod("method", &B::method)
+                    .addMethod(glue::keys::operators::tostring,
+                               [](const B &b) { return "B(" + b.member + ")"; });
 
   module["createB"] = []() { return B("unnamed"); };
 
   glue::lua::State state;
+  state.openStandardLibs();
   state.addModule(module);
 
   CHECK(state.run("local a = inner.A.__new(); a:setMember('testA'); return a:member()")
@@ -183,6 +186,7 @@ TEST_CASE("Modules") {
         == "testA");
   CHECK(state.run("local b = B.__new('testB'); return b:member()")->as<std::string>() == "testB");
   CHECK(state.run("local b = createB(); return b:member()")->as<std::string>() == "unnamed");
+  CHECK(state.run("local b = createB(); return tostring(b)")->as<std::string>() == "B(unnamed)");
 }
 
 TEST_CASE("Lua lifetime") {
