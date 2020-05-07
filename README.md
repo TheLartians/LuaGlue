@@ -82,7 +82,7 @@ void exampleModules() {
 }
 ```
 
-Check the [API](include/glue/emscripten/state.h) and [tests](test/source/state.cpp) for functionality and examples.
+Check the [API](include/glue/lua/state.h) and [tests](test/source/state.cpp) for functionality and examples.
 See [here](https://github.com/TheLartians/TypeScriptXX) for a full example project using automatic TypeScript declarations.
 
 ### Adding to your project
