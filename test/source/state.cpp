@@ -50,11 +50,22 @@ TEST_CASE("Mapped Values") {
     CHECK(root["x"]->get<size_t>() == 128);
   }
 
-  SUBCASE("callbacks") {
-    CHECK_NOTHROW(root["f"] = [](int x) { return 42 + x; });
+  SUBCASE("set callbacks") {
+    SUBCASE("defined arguments") {
+      CHECK_NOTHROW(root["f"] = [](int x) { return 42 + x; });
+    }
+    SUBCASE("any arguments") {
+      CHECK_NOTHROW(root["f"] = [](const glue::AnyArguments &args) -> glue::Any {
+        REQUIRE(args.size() == 1);
+        return 42 + args[0].get<int>();
+      });
+    }
     REQUIRE(root["f"].asFunction());
     CHECK(root["f"].asFunction()(3).get<int>() == 45);
     CHECK(state.get<int>("f(10)") == 52);
+  }
+
+  SUBCASE("extract callbacks") {
     CHECK_NOTHROW(state.run("function g(a,b) return a+b end"));
     CHECK(root["g"].asFunction()(2, 3).get<int>() == 5);
   }
@@ -174,6 +185,8 @@ TEST_CASE("Modules") {
                     .addMethod("method", &B::method)
                     .addMethod(glue::keys::operators::eq,
                                [](const B &a, const B &b) { return a.member == b.member; })
+                    .addMethod(glue::keys::operators::add,
+                               [](const B &a, const B &b) { return B(a.member + b.member); })
                     .addMethod(glue::keys::operators::tostring,
                                [](const B &b) { return "B(" + b.member + ")"; });
 
@@ -201,6 +214,10 @@ TEST_CASE("Modules") {
     CHECK_NOTHROW(state.run("local a = B.__new('A'); local b = B.__new('A'); assert(a == b);"));
     CHECK_NOTHROW(
         state.run("local a = B.__new('A'); local b = B.__new('B'); assert(not (a == b));"));
+    CHECK_THROWS(
+        state.run("local a = inner.A__new('A'); local b = inner.A__new('B'); return a + b"));
+    CHECK_NOTHROW(state.run(
+        "local a = B.__new('A'); local b = B.__new('B'); assert(a + b == B.__new('AB'));"));
   }
 }
 
