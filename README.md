@@ -93,7 +93,7 @@ If not available before, this will automatically add a Lua and Glue target as we
 ```cmake
 CPMAddPackage(
   NAME LuaGlue
-  VERSION 1.0
+  VERSION 1.1.2
   GITHUB_REPOSITORY TheLartians/LuaGlue
 )
 
