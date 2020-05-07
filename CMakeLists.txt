@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 # ---- Project ----
 
 project(LuaGlue
-  VERSION 1.1.2
+  VERSION 1.1.3
   LANGUAGES CXX C
 )
 
