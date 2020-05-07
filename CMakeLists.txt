@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 # ---- Project ----
 
 project(LuaGlue
-  VERSION 1.1.1
+  VERSION 1.1.2
   LANGUAGES CXX C
-) 
+)
 
 # ---- Include guards ----
 
@@ -20,7 +20,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME Glue
   GITHUB_REPOSITORY TheLartians/Glue
-  VERSION 1.2.1
+  VERSION 1.3.2
 )
 
 # PackageProject.cmake will be used to make our target installable
