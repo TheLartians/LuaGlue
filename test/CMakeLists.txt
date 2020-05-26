@@ -46,6 +46,10 @@ target_link_libraries(LuaGlueTests doctest LuaGlue)
 
 set_target_properties(LuaGlueTests PROPERTIES CXX_STANDARD 17)
 
+if (NOT TEST_INSTALLED_VERSION)
+  target_compile_definitions(LuaGlue PRIVATE -DSOL_ALL_SAFETIES_ON=1)
+endif()
+
 # enable compiler warnings
 if (NOT TEST_INSTALLED_VERSION)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
