@@ -66,11 +66,14 @@ TEST_CASE("Mapped Values") {
     REQUIRE(root["f"].asFunction());
     CHECK(root["f"].asFunction()(3).get<int>() == 45);
     CHECK(state.get<int>("f(10)") == 52);
+    CHECK_THROWS(state.run("f(nil)"));
+    CHECK_THROWS(state.run("f('10')"));
   }
 
   SUBCASE("extract callbacks") {
     CHECK_NOTHROW(state.run("function g(a,b) return a+b end"));
     CHECK(root["g"].asFunction()(2, 3).get<int>() == 5);
+    CHECK_THROWS(root["g"].asFunction()());
   }
 
   SUBCASE("any") {
@@ -135,6 +138,8 @@ TEST_CASE("Passthrough arguments") {
   root["f"] = [](glue::Any v) { return v; };
   CHECK(root["f"].asFunction()(46).get<int>() == 46);
   CHECK(root["f"].asFunction()("hello").get<std::string>() == "hello");
+  CHECK_THROWS(state.run("f()"));
+  CHECK_NOTHROW(state.run("assert(f(nil) == nil)"));
   CHECK_NOTHROW(state.run("assert(f(47) == 47)"));
   CHECK_NOTHROW(state.run("assert(f(1.141) == 1.141)"));
   CHECK_NOTHROW(state.run("assert(f('test') == 'test')"));
