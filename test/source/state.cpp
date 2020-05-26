@@ -133,6 +133,7 @@ TEST_CASE("Passthrough arguments") {
   CHECK(root["f"].asFunction()(46).get<int>() == 46);
   CHECK(root["f"].asFunction()("hello").get<std::string>() == "hello");
   CHECK_NOTHROW(state.run("assert(f(47) == 47)"));
+  CHECK_NOTHROW(state.run("assert(f(1.141) == 1.141)"));
   CHECK_NOTHROW(state.run("assert(f('test') == 'test')"));
   CHECK_NOTHROW(state.run("x = {a=1,b=2}; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = {1,2}; assert(f(x) == x)"));

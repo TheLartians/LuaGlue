@@ -7,7 +7,9 @@
 #include <exception>
 #include <memory>
 #include <sstream>
+
 #define SOL_PRINT_ERRORS 0
+#define SOL_SAFE_NUMERICS 1
 #include <sol/sol.hpp>
 
 using namespace glue;
@@ -103,7 +105,11 @@ namespace glue {
           case sol::type::string:
             return value.as<std::string>();
           case sol::type::number:
-            return value.as<double>();
+            if (value.is<int>()) {
+              return value.as<int>();
+            } else {
+              return value.as<double>();
+            }
           function_case:
           case sol::type::function: {
             using namespace revisited;
@@ -139,7 +145,7 @@ namespace glue {
 
       struct AnyToSolVisitor
           : revisited::RecursiveVisitor<
-                const int &, const size_t &, double, bool, const std::string &, std::string,
+                const int &, const unsigned &, const size_t &, double, bool, const std::string &, std::string,
                 AnyFunction, const glue::Map &, const LuaMap &, const LuaFunction &, sol::object> {
         lua_State *state;
         sol::object result;
@@ -153,6 +159,11 @@ namespace glue {
         }
 
         bool visit(const int &v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(const unsigned &v) override {
           result = sol::make_object(state, v);
           return true;
         }
