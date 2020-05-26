@@ -45,6 +45,7 @@ add_executable(LuaGlueTests ${sources})
 target_link_libraries(LuaGlueTests doctest LuaGlue)
 
 set_target_properties(LuaGlueTests PROPERTIES CXX_STANDARD 17)
+target_compile_definitions(LuaGlue PRIVATE -DSOL_ALL_SAFETIES_ON=1)
 
 # enable compiler warnings
 if (NOT TEST_INSTALLED_VERSION)

@@ -19,7 +19,7 @@ TEST_CASE("Run script and get result") {
   CHECK(state.get<glue::AnyFunction>("function(a,b) return a+b end")(2, 3).get<int>() == 5);
 
   SUBCASE("regular map") {
-    auto map = glue::MapValue(state.get<std::shared_ptr<glue::Map>>("{a=1,b=2}"));
+    auto map = state.run("return {a=1,b=2}").asMap();
     REQUIRE(map);
     CHECK(map.keys().size() == 2);
     CHECK(map["a"]->get<int>() == 1);
@@ -27,7 +27,7 @@ TEST_CASE("Run script and get result") {
   }
 
   SUBCASE("map with non-string keys") {
-    auto map = glue::MapValue(state.get<std::shared_ptr<glue::Map>>("{a=1,[1]=2}"));
+    auto map = state.run("return {a=1,[1]=2}").asMap();
     REQUIRE(map);
     CHECK(map.keys().size() == 1);
     CHECK(map["a"]->get<int>() == 1);

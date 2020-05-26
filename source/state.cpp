@@ -14,7 +14,7 @@
 #include <sol/sol.hpp>
 
 using namespace glue;
-#include <iostream>
+
 namespace glue {
   namespace lua {
     namespace detail {
@@ -59,7 +59,14 @@ namespace glue {
 
         LuaMap(const LuaMap &other) : LuaMap(other.data) {}
 
-        Any get(const std::string &key) const { return solToAny(data[key]); }
+        Any get(const std::string &key) const { 
+          auto value = data[key];
+          if (value.valid()) {
+            return solToAny(data[key]);
+          } else {
+            return Any();
+          }
+        }
 
         void set(const std::string &key, const Any &value) {
           data[key] = anyToSol(data.lua_state(), value);
@@ -99,6 +106,10 @@ namespace glue {
       };
 
       Any solToAny(sol::object value) {
+        if (!value.valid()) {
+          return Any();
+        }
+        
         switch (value.get_type()) {
           case sol::type::none:
           case sol::type::lua_nil:
@@ -230,17 +241,19 @@ namespace glue {
               table[k] = anyToSol(state, v.get(k), cache);
               return false;
             });
-
-            if (auto extends = table[keys::extendsKey]) {
+            
+            auto extends = table[keys::extendsKey];
+            if (extends.valid()) {
               sol::table metatable(state, sol::new_table(1));
               metatable[sol::meta_function::index] = extends;
-              table[sol::metatable_key] = metatable;
+              table[sol::metatable_key] = std::move(metatable);
             }
-
+            
             if (cache) {
               (*cache)[&v] = table;
             }
-            result = table;
+
+            result = std::move(table);
           }
           return true;
         }
@@ -299,7 +312,8 @@ lua::State::State() : data(std::make_shared<Data>()) {
 
   auto forwardBinaryMetaMethodWithDefault = [](auto  glueName, auto defaultOp){
     return [glueName, defaultOp](sol::this_state state, const Instance &value, const Instance &other) -> sol::object {
-      if (auto metamethod = value.classTable[glueName]) {
+      auto metamethod = value.classTable[glueName];
+      if (metamethod.valid()) {
         return metamethod(detail::anyToSol(state, value), detail::anyToSol(state, other));
       } else {
         return sol::make_object(state, defaultOp(value, other));
@@ -310,7 +324,8 @@ lua::State::State() : data(std::make_shared<Data>()) {
   auto forwardBinaryMetaMethod = [](auto  glueName){
     return [glueName](sol::object value, sol::object other) -> sol::object {
       auto &instance = value.as<Instance &>();
-      if (auto metamethod = instance.classTable[glueName]) {
+      auto metamethod = instance.classTable[glueName];
+      if (metamethod.valid()) {
         return metamethod(value, other);
       } else {
         throw std::runtime_error("used unsupported binary operator");
@@ -335,7 +350,8 @@ lua::State::State() : data(std::make_shared<Data>()) {
     sol::meta_function::floor_division, forwardBinaryMetaMethod(keys::operators::idiv),
     sol::meta_function::modulus, forwardBinaryMetaMethod(keys::operators::mod),
     sol::meta_function::to_string, +[](sol::this_state state,const Instance &value) -> sol::object {
-      if (auto toString = value.classTable[keys::operators::tostring]) {
+      auto toString = value.classTable[keys::operators::tostring];
+      if (toString.valid()) {
         return value.classTable[keys::operators::tostring](detail::anyToSol(state, value));
       } else {
         std::stringstream stream;
