@@ -187,6 +187,8 @@ TEST_CASE("Modules") {
                                [](const B &a, const B &b) { return a.member == b.member; })
                     .addMethod(glue::keys::operators::add,
                                [](const B &a, const B &b) { return B(a.member + b.member); })
+                    .addMethod(glue::keys::operators::mul,
+                               [](const B &a, int o) { return a.member.size() * o; })
                     .addMethod(glue::keys::operators::tostring,
                                [](const B &b) { return "B(" + b.member + ")"; });
 
@@ -218,6 +220,8 @@ TEST_CASE("Modules") {
         state.run("local a = inner.A__new('A'); local b = inner.A__new('B'); return a + b"));
     CHECK_NOTHROW(state.run(
         "local a = B.__new('A'); local b = B.__new('B'); assert(a + b == B.__new('AB'));"));
+    CHECK_NOTHROW(state.run("local a = B.__new('four'); assert(a*2 == 8);"));
+    CHECK_THROWS(state.run("local a = B.__new('four'); assert(a/a);"));
   }
 }
 

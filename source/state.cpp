@@ -279,11 +279,12 @@ lua::State::State() : data(std::make_shared<Data>()) {
   };
 
   auto forwardBinaryMetaMethod = [](auto  glueName){
-    return [glueName](sol::this_state state, const Instance &value, const Instance &other) -> sol::object {
-      if (auto metamethod = value.classTable[glueName]) {
-        return metamethod(detail::anyToSol(state, value), detail::anyToSol(state, other));
+    return [glueName](sol::object value, sol::object other) -> sol::object {
+      auto &instance = value.as<Instance &>();
+      if (auto metamethod = instance.classTable[glueName]) {
+        return metamethod(value, other);
       } else {
-        return sol::global_table(state)["error"]("used unsupported binary operator");
+        throw std::runtime_error("used unsupported binary operator");
       }
     };
   };
