@@ -59,7 +59,7 @@ namespace glue {
 
         LuaMap(const LuaMap &other) : LuaMap(other.data) {}
 
-        Any get(const std::string &key) const { 
+        Any get(const std::string &key) const {
           auto value = data[key];
           if (value.valid()) {
             return solToAny(data[key]);
@@ -109,7 +109,7 @@ namespace glue {
         if (!value.valid()) {
           return Any();
         }
-        
+
         switch (value.get_type()) {
           case sol::type::none:
           case sol::type::lua_nil:
@@ -241,14 +241,14 @@ namespace glue {
               table[k] = anyToSol(state, v.get(k), cache);
               return false;
             });
-            
+
             auto extends = table[keys::extendsKey];
             if (extends.valid()) {
               sol::table metatable(state, sol::new_table(1));
               metatable[sol::meta_function::index] = extends;
               table[sol::metatable_key] = std::move(metatable);
             }
-            
+
             if (cache) {
               (*cache)[&v] = table;
             }
