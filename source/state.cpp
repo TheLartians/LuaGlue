@@ -7,11 +7,14 @@
 #include <exception>
 #include <memory>
 #include <sstream>
+
 #define SOL_PRINT_ERRORS 0
+#define SOL_SAFE_NUMERICS 1
+#define SOL_AUTOMAGICAL_TYPES_BY_DEFAULT 0
 #include <sol/sol.hpp>
 
 using namespace glue;
-
+#include <iostream>
 namespace glue {
   namespace lua {
     namespace detail {
@@ -22,6 +25,8 @@ namespace glue {
       Any solToAny(sol::object value);
 
       struct LuaGlueData {
+        LuaGlueData() = default;
+        LuaGlueData(const LuaGlueData &) = delete;
         Context context;
         observe::Event<> onDestroy;
       };
@@ -103,7 +108,11 @@ namespace glue {
           case sol::type::string:
             return value.as<std::string>();
           case sol::type::number:
-            return value.as<double>();
+            if (value.is<int>()) {
+              return value.as<int>();
+            } else {
+              return value.as<double>();
+            }
           function_case:
           case sol::type::function: {
             using namespace revisited;
@@ -138,9 +147,10 @@ namespace glue {
       }
 
       struct AnyToSolVisitor
-          : revisited::RecursiveVisitor<
-                const int &, const size_t &, double, bool, const std::string &, std::string,
-                AnyFunction, const glue::Map &, const LuaMap &, const LuaFunction &, sol::object> {
+          : revisited::RecursiveVisitor<const int &, const unsigned &, const size_t &, double, bool,
+                                        const std::string &, std::string, AnyFunction,
+                                        const glue::Map &, const LuaMap &, const LuaFunction &,
+                                        sol::object> {
         lua_State *state;
         sol::object result;
         MapCache *cache;
@@ -153,6 +163,11 @@ namespace glue {
         }
 
         bool visit(const int &v) override {
+          result = sol::make_object(state, v);
+          return true;
+        }
+
+        bool visit(const unsigned &v) override {
           result = sol::make_object(state, v);
           return true;
         }
@@ -204,10 +219,24 @@ namespace glue {
             result = it->second;
           } else {
             sol::table table(state, sol::create);
+
+            if (auto classInfo = v.get(keys::classKey)) {
+              table[keys::classKey] = anyToSol(state, classInfo, cache);
+              auto &data = detail::getLuaGlueData(state);
+              data.context.addRootMap(glue::MapValue(std::make_shared<LuaMap>(table)));
+            }
+
             v.forEach([&](auto &&k) {
               table[k] = anyToSol(state, v.get(k), cache);
               return false;
             });
+
+            if (auto extends = table[keys::extendsKey]) {
+              sol::table metatable(state, sol::new_table(1));
+              metatable[sol::meta_function::index] = extends;
+              table[sol::metatable_key] = metatable;
+            }
+
             if (cache) {
               (*cache)[&v] = table;
             }
@@ -279,11 +308,12 @@ lua::State::State() : data(std::make_shared<Data>()) {
   };
 
   auto forwardBinaryMetaMethod = [](auto  glueName){
-    return [glueName](sol::this_state state, const Instance &value, const Instance &other) -> sol::object {
-      if (auto metamethod = value.classTable[glueName]) {
-        return metamethod(detail::anyToSol(state, value), detail::anyToSol(state, other));
+    return [glueName](sol::object value, sol::object other) -> sol::object {
+      auto &instance = value.as<Instance &>();
+      if (auto metamethod = instance.classTable[glueName]) {
+        return metamethod(value, other);
       } else {
-        return sol::global_table(state)["error"]("used unsupported binary operator");
+        throw std::runtime_error("used unsupported binary operator");
       }
     };
   };
@@ -341,36 +371,18 @@ void lua::State::addModule(const MapValue &map, const MapValue &r) {
   // use cache to not create copies of referenced tables
   detail::MapCache cache;
 
-  // first pass: convert and types only
+  // first pass: convert types only
   glue::Context context;
   context.addRootMap(map);
-  auto &luaGlueData = detail::getLuaGlueData(data->state);
   for (auto &&id : context.uniqueTypes) {
     auto &&type = context.types[id.index];
-    auto convertedTypeMap
-        = Value(detail::solToAny(detail::anyToSol(data->state, type.data.data, &cache))).asMap();
-    luaGlueData.context.addRootMap(convertedTypeMap);
+    detail::anyToSol(data->state, type.data.data, &cache);
   }
 
   // second pass: convert all values
   auto convertedMap
       = Value(detail::solToAny(detail::anyToSol(data->state, map.data, &cache))).asMap();
   assert(convertedMap);
-  luaGlueData.context.addRootMap(convertedMap);
-
-  for (auto &&id : luaGlueData.context.uniqueTypes) {
-    auto &&type = luaGlueData.context.types[id.index];
-    auto &&typeMap = type.data;
-    if (!typeMap["new"]) {
-      typeMap["new"] = typeMap[keys::constructorKey];
-    }
-    auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).data;
-    if (auto extends = typeMap[keys::extendsKey]) {
-      sol::table metatable(data->state, sol::new_table(1));
-      metatable[sol::meta_function::index] = detail::anyToSol(data->state, *extends);
-      table[sol::metatable_key] = metatable;
-    }
-  }
 
   convertedMap.forEach([&](auto &&key, auto &&value) {
     r[key] = value;

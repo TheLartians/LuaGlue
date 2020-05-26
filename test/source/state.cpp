@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include <glue/class.h>
+#include <glue/enum.h>
 #include <glue/lua/state.h>
 
 #include <exception>
@@ -46,6 +47,8 @@ TEST_CASE("Mapped Values") {
     CHECK(state.get<std::string>("y") == "x");
     CHECK_NOTHROW(root["z"] = true);
     CHECK(root["z"]->get<bool>() == true);
+    CHECK_NOTHROW(root["x"] = unsigned(42));
+    CHECK(root["x"]->get<unsigned>() == 42);
     CHECK_NOTHROW(root["x"] = size_t(128));
     CHECK(root["x"]->get<size_t>() == 128);
   }
@@ -133,6 +136,7 @@ TEST_CASE("Passthrough arguments") {
   CHECK(root["f"].asFunction()(46).get<int>() == 46);
   CHECK(root["f"].asFunction()("hello").get<std::string>() == "hello");
   CHECK_NOTHROW(state.run("assert(f(47) == 47)"));
+  CHECK_NOTHROW(state.run("assert(f(1.141) == 1.141)"));
   CHECK_NOTHROW(state.run("assert(f('test') == 'test')"));
   CHECK_NOTHROW(state.run("x = {a=1,b=2}; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = {1,2}; assert(f(x) == x)"));
@@ -172,6 +176,8 @@ TEST_CASE("Modules") {
     int method(int v) { return int(member.size()) + v; }
   };
 
+  enum class E : int { V1, V2, V3 };
+
   auto module = glue::createAnyMap();
   auto inner = glue::createAnyMap();
 
@@ -187,10 +193,18 @@ TEST_CASE("Modules") {
                                [](const B &a, const B &b) { return a.member == b.member; })
                     .addMethod(glue::keys::operators::add,
                                [](const B &a, const B &b) { return B(a.member + b.member); })
+                    .addMethod(glue::keys::operators::mul,
+                               [](const B &a, int o) { return a.member.size() * o; })
                     .addMethod(glue::keys::operators::tostring,
                                [](const B &b) { return "B(" + b.member + ")"; });
 
   module["createB"] = []() { return B("unnamed"); };
+
+  module["E"] = glue::createEnum<E>()
+                    .addValue("V1", E::V1)
+                    .addValue("V2", E::V2)
+                    .addValue("V3", E::V3)
+                    .addValue("V4", E::V1);
 
   glue::lua::State state;
   state.openStandardLibs();
@@ -218,6 +232,16 @@ TEST_CASE("Modules") {
         state.run("local a = inner.A__new('A'); local b = inner.A__new('B'); return a + b"));
     CHECK_NOTHROW(state.run(
         "local a = B.__new('A'); local b = B.__new('B'); assert(a + b == B.__new('AB'));"));
+    CHECK_NOTHROW(state.run("local a = B.__new('four'); assert(a*2 == 8);"));
+    CHECK_THROWS(state.run("local a = B.__new('four'); assert(a/a);"));
+  }
+
+  SUBCASE("enums") {
+    CHECK(state.run("return E.V1")->as<E>() == E::V1);
+    CHECK_NOTHROW(state.run("assert(E.V1 == E.V1)"));
+    CHECK_NOTHROW(state.run("assert(E.V1 == E.V4)"));
+    CHECK_NOTHROW(state.run("assert(E.V1 ~= E.V2)"));
+    CHECK(state.run("return E.V1:value()")->as<int>() == int(E::V1));
   }
 }
 
