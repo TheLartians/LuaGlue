@@ -17,6 +17,13 @@ endif()
 
 include(cmake/CPM.cmake)
 
+# PackageProject.cmake will be used to make our target installable
+CPMAddPackage(
+  NAME PackageProject.cmake
+  GITHUB_REPOSITORY TheLartians/PackageProject.cmake
+  VERSION 1.2
+)
+
 CPMAddPackage(
   NAME Glue
   VERSION 1.5
