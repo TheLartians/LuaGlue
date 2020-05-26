@@ -370,7 +370,6 @@ lua::State::~State() {}
 void lua::State::addModule(const MapValue &map, const MapValue &r) {
   // use cache to not create copies of referenced tables
   detail::MapCache cache;
-  // auto &luaGlueData = detail::getLuaGlueData(data->state);
 
   // first pass: convert types only
   glue::Context context;
@@ -384,21 +383,6 @@ void lua::State::addModule(const MapValue &map, const MapValue &r) {
   auto convertedMap
       = Value(detail::solToAny(detail::anyToSol(data->state, map.data, &cache))).asMap();
   assert(convertedMap);
-  // luaGlueData.context.addRootMap(convertedMap);
-
-  // for (auto &&id : luaGlueData.context.uniqueTypes) {
-  //   auto &&type = luaGlueData.context.types[id.index];
-  //   auto &&typeMap = type.data;
-  //   if (!typeMap["new"]) {
-  //     typeMap["new"] = typeMap[keys::constructorKey];
-  //   }
-  //   auto table = revisited::visitor_cast<detail::LuaMap &>(*typeMap.data).data;
-  //   if (auto extends = typeMap[keys::extendsKey]) {
-  //     sol::table metatable(data->state, sol::new_table(1));
-  //     metatable[sol::meta_function::index] = detail::anyToSol(data->state, *extends);
-  //     table[sol::metatable_key] = metatable;
-  //   }
-  // }
 
   convertedMap.forEach([&](auto &&key, auto &&value) {
     r[key] = value;
