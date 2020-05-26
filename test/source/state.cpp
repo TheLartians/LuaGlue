@@ -47,6 +47,8 @@ TEST_CASE("Mapped Values") {
     CHECK(state.get<std::string>("y") == "x");
     CHECK_NOTHROW(root["z"] = true);
     CHECK(root["z"]->get<bool>() == true);
+    CHECK_NOTHROW(root["x"] = unsigned(42));
+    CHECK(root["x"]->get<unsigned>() == 42);
     CHECK_NOTHROW(root["x"] = size_t(128));
     CHECK(root["x"]->get<size_t>() == 128);
   }
