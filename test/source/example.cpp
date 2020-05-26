@@ -56,7 +56,7 @@ void exampleModules() {
 
   state.addModule(module, state.root());
 
-  state.run("a = A.new('test');");
+  state.run("a = A.__new('test');");
   state.run("print(a:member());");
   state.run("print(a:method());");
 }

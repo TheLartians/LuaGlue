@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include <glue/class.h>
+#include <glue/enum.h>
 #include <glue/lua/state.h>
 
 #include <exception>
@@ -173,6 +174,8 @@ TEST_CASE("Modules") {
     int method(int v) { return int(member.size()) + v; }
   };
 
+  enum class E : int { V1, V2, V3 };
+
   auto module = glue::createAnyMap();
   auto inner = glue::createAnyMap();
 
@@ -194,6 +197,12 @@ TEST_CASE("Modules") {
                                [](const B &b) { return "B(" + b.member + ")"; });
 
   module["createB"] = []() { return B("unnamed"); };
+
+  module["E"] = glue::createEnum<E>()
+                    .addValue("V1", E::V1)
+                    .addValue("V2", E::V2)
+                    .addValue("V3", E::V3)
+                    .addValue("V4", E::V1);
 
   glue::lua::State state;
   state.openStandardLibs();
@@ -223,6 +232,14 @@ TEST_CASE("Modules") {
         "local a = B.__new('A'); local b = B.__new('B'); assert(a + b == B.__new('AB'));"));
     CHECK_NOTHROW(state.run("local a = B.__new('four'); assert(a*2 == 8);"));
     CHECK_THROWS(state.run("local a = B.__new('four'); assert(a/a);"));
+  }
+
+  SUBCASE("enums") {
+    CHECK(state.run("return E.V1")->as<E>() == E::V1);
+    CHECK_NOTHROW(state.run("assert(E.V1 == E.V1)"));
+    CHECK_NOTHROW(state.run("assert(E.V1 == E.V4)"));
+    CHECK_NOTHROW(state.run("assert(E.V1 ~= E.V2)"));
+    CHECK(state.run("return E.V1:value()")->as<int>() == int(E::V1));
   }
 }
 
