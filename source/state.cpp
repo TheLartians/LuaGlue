@@ -97,11 +97,12 @@ namespace glue {
 
         Any operator()(const AnyArguments &args) const {
           data.push();
+          auto state = data.lua_state();
           for (auto &arg : args) {
-            anyToSol(data.lua_state(), arg).push();
+            anyToSol(state, arg).push(state);
           }
           lua_call(data.lua_state(), int(args.size()), 1);
-          return solToAny(sol::stack::pop<sol::object>(data.lua_state()));
+          return solToAny(sol::stack::pop<sol::object>(state));
         }
       };
 
