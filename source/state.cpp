@@ -159,10 +159,9 @@ namespace glue {
       }
 
       struct AnyToSolVisitor
-          : revisited::RecursiveVisitor<const int &, const unsigned &, const size_t &, double, bool,
-                                        const std::string &, std::string, AnyFunction,
-                                        const glue::Map &, const LuaMap &, const LuaFunction &,
-                                        sol::object> {
+          : revisited::RecursiveVisitor<
+                const int &, const size_t &, double, bool, const std::string &, std::string,
+                AnyFunction, const glue::Map &, const LuaMap &, const LuaFunction &, sol::object> {
         lua_State *state;
         sol::object result;
         MapCache *cache;
@@ -175,11 +174,6 @@ namespace glue {
         }
 
         bool visit(const int &v) override {
-          result = sol::make_object(state, v);
-          return true;
-        }
-
-        bool visit(const unsigned &v) override {
           result = sol::make_object(state, v);
           return true;
         }
