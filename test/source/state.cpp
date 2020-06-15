@@ -130,7 +130,7 @@ TEST_CASE("Mapped Values") {
   }
 }
 
-TEST_CASE("Passthrough arguments") {
+TEST_CASE("C++ passthrough arguments") {
   glue::lua::State state;
   state.openStandardLibs();
   glue::MapValue root = state.root();
@@ -147,6 +147,19 @@ TEST_CASE("Passthrough arguments") {
   CHECK_NOTHROW(state.run("x = {1,2}; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = function() end; assert(f(x) == x)"));
   CHECK_NOTHROW(state.run("x = nil; assert(f(x) == x)"));
+}
+
+TEST_CASE("Lua passthrough arguments") {
+  glue::lua::State state;
+  auto f = state.get("function(x) return x end").asFunction();
+  auto test = [&](auto v) { CHECK(f(v).template get<decltype(v)>() == v); };
+  test(short(42));
+  test((unsigned short)(43));
+  test(int(44));
+  test((unsigned int)(45));
+  test(long(46));
+  test((unsigned long)(47));
+  test(std::string("48"));
 }
 
 TEST_CASE("Run file") {
