@@ -33,10 +33,12 @@ CPMAddPackage(
 if (NOT TARGET Lua)
   CPMAddPackage(
     NAME Lua
-    GITHUB_REPOSITORY lua/lua
     VERSION 5.3.5
     # lua has no CMakeLists.txt
     DOWNLOAD_ONLY YES
+    # This patch updates luaconf.h to support iOS and Android
+    GITHUB_REPOSITORY TheLartians/lua
+    GIT_TAG d5a3662fb48e4c1a726b8e93eab2a2520d9b1025
   )
 
   if (Lua_ADDED)
@@ -44,7 +46,11 @@ if (NOT TARGET Lua)
     # create a new independent library LuaForGlue that is aliased to lua 
     # this allows installing and using LuaGlue without interfering with other installations of lua  
     FILE(GLOB lua_sources ${Lua_SOURCE_DIR}/*.c)
+    # remove executable sources
+    list(REMOVE_ITEM lua_sources ${Lua_SOURCE_DIR}/lua.c)
+    
     FILE(GLOB lua_headers ${Lua_SOURCE_DIR}/*.h)
+    
     add_library(LuaForGlue ${lua_sources} ${lua_headers})
     set_target_properties(LuaForGlue PROPERTIES LINKER_LANGUAGE C)
 
@@ -54,9 +60,9 @@ if (NOT TARGET Lua)
     )
 
     if(ANDROID)
-    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
+      target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
     elseif(EMSCRIPTEN OR WIN32)
-    elseif(UNIX OR APPLE)
+    elseif(IOS)
       target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
     endif()
 
