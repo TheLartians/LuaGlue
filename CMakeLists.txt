@@ -31,51 +31,7 @@ CPMAddPackage(
 )
 
 if (NOT TARGET Lua)
-  set(LUA_VERSION 5.4.2)
-
-  CPMAddPackage(
-    NAME Lua
-    VERSION ${LUA_VERSION}
-    # lua has no CMakeLists.txt
-    DOWNLOAD_ONLY YES
-    GITHUB_REPOSITORY lua/lua
-  )
-
-  if (Lua_ADDED)
-    # we have just downloaded the lua source as lua isn't installed locally
-    # create a new independent library LuaForGlue that is aliased to lua 
-    # this allows installing and using LuaGlue without interfering with other installations of lua  
-    FILE(GLOB lua_sources ${Lua_SOURCE_DIR}/*.c)
-    # remove executable sources
-    list(REMOVE_ITEM lua_sources ${Lua_SOURCE_DIR}/lua.c)
-    
-    FILE(GLOB lua_headers ${Lua_SOURCE_DIR}/*.h)
-    
-    add_library(LuaForGlue ${lua_sources} ${lua_headers})
-
-    target_include_directories(LuaForGlue
-      PUBLIC
-        $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
-    )
-
-    if(ANDROID)
-      target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
-    elseif(EMSCRIPTEN OR WIN32)
-    elseif(IOS)
-      target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
-    endif()
-
-    packageProject(
-      NAME LuaForGlue
-      VERSION ${LUA_VERSION}
-      BINARY_DIR ${Lua_BINARY_DIR}
-      INCLUDE_DIR ${Lua_SOURCE_DIR}
-      INCLUDE_DESTINATION include/LuaForGlue-${LUA_VERSION}
-    )
-
-    add_library(Lua ALIAS LuaForGlue)
-    set(ADDITIONAL_GLUE_DEPENDENCIES "LuaForGlue")
-  endif()
+  include(cmake/get_lua.cmake)
 else()
   set(ADDITIONAL_GLUE_DEPENDENCIES "Lua")
 endif()
