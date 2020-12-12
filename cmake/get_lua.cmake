@@ -46,15 +46,15 @@ if (Lua_ADDED)
   )
 
   find_library(LIBM m REQUIRED)
-  add_library(LuaForGlue STATIC ${LUA_LIB_SRCS})
+  add_library(LuaForGlue ${LUA_LIB_SRCS})
 
   # create a new independent library LuaForGlue that is aliased to lua 
   # this allows installing and using LuaGlue without interfering with other installations of lua  
   target_link_libraries(LuaForGlue INTERFACE ${LIBM})
-  target_include_directories(LuaForGlue PUBLIC ${Lua_SOURCE_DIR})
-
-  target_compile_definitions(LuaForGlue 
-      PUBLIC ${LUA_DEFINITIONS}
+  target_include_directories(LuaForGlue
+    PUBLIC
+      $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
+      $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}
   )
 
   if(UNIX)
