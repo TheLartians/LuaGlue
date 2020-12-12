@@ -31,9 +31,11 @@ CPMAddPackage(
 )
 
 if (NOT TARGET Lua)
+  set(LUA_VERSION 5.4.2)
+
   CPMAddPackage(
     NAME Lua
-    VERSION 5.4.2
+    VERSION ${LUA_VERSION}
     # lua has no CMakeLists.txt
     DOWNLOAD_ONLY YES
     GITHUB_REPOSITORY lua/lua
@@ -50,7 +52,6 @@ if (NOT TARGET Lua)
     FILE(GLOB lua_headers ${Lua_SOURCE_DIR}/*.h)
     
     add_library(LuaForGlue ${lua_sources} ${lua_headers})
-    set_target_properties(LuaForGlue PROPERTIES LINKER_LANGUAGE C)
 
     target_include_directories(LuaForGlue
       PUBLIC
@@ -66,10 +67,10 @@ if (NOT TARGET Lua)
 
     packageProject(
       NAME LuaForGlue
-      VERSION 5.3.5
+      VERSION ${LUA_VERSION}
       BINARY_DIR ${Lua_BINARY_DIR}
       INCLUDE_DIR ${Lua_SOURCE_DIR}
-      INCLUDE_DESTINATION include/LuaForGlue-5.3.5
+      INCLUDE_DESTINATION include/LuaForGlue-${LUA_VERSION}
     )
 
     add_library(Lua ALIAS LuaForGlue)
