@@ -52,7 +52,7 @@ if (Lua_ADDED)
   target_include_directories(LuaForGlue
     PUBLIC
       $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
-      $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}
+      $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}>
   )
 
   if(UNIX)
