@@ -45,12 +45,10 @@ if (Lua_ADDED)
       "${Lua_SOURCE_DIR}/linit.c"
   )
 
-  find_library(LIBM m REQUIRED)
-  add_library(LuaForGlue ${LUA_LIB_SRCS})
-
   # create a new independent library LuaForGlue that is aliased to lua 
   # this allows installing and using LuaGlue without interfering with other installations of lua  
-  target_link_libraries(LuaForGlue INTERFACE ${LIBM})
+  add_library(LuaForGlue ${LUA_LIB_SRCS})
+
   target_include_directories(LuaForGlue
     PUBLIC
       $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
