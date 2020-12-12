@@ -26,57 +26,12 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME Glue
-  VERSION 1.5
+  VERSION 1.5.1
   GITHUB_REPOSITORY TheLartians/Glue
 )
 
 if (NOT TARGET Lua)
-  CPMAddPackage(
-    NAME Lua
-    VERSION 5.3.5
-    # lua has no CMakeLists.txt
-    DOWNLOAD_ONLY YES
-    # This patch updates luaconf.h to support iOS and Android
-    GITHUB_REPOSITORY TheLartians/lua
-    GIT_TAG d5a3662fb48e4c1a726b8e93eab2a2520d9b1025
-  )
-
-  if (Lua_ADDED)
-    # we have just downloaded the lua source as lua isn't installed locally
-    # create a new independent library LuaForGlue that is aliased to lua 
-    # this allows installing and using LuaGlue without interfering with other installations of lua  
-    FILE(GLOB lua_sources ${Lua_SOURCE_DIR}/*.c)
-    # remove executable sources
-    list(REMOVE_ITEM lua_sources ${Lua_SOURCE_DIR}/lua.c)
-    
-    FILE(GLOB lua_headers ${Lua_SOURCE_DIR}/*.h)
-    
-    add_library(LuaForGlue ${lua_sources} ${lua_headers})
-    set_target_properties(LuaForGlue PROPERTIES LINKER_LANGUAGE C)
-
-    target_include_directories(LuaForGlue
-      PUBLIC
-        $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
-    )
-
-    if(ANDROID)
-      target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
-    elseif(EMSCRIPTEN OR WIN32)
-    elseif(IOS)
-      target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
-    endif()
-
-    packageProject(
-      NAME LuaForGlue
-      VERSION 5.3.5
-      BINARY_DIR ${Lua_BINARY_DIR}
-      INCLUDE_DIR ${Lua_SOURCE_DIR}
-      INCLUDE_DESTINATION include/LuaForGlue-5.3.5
-    )
-
-    add_library(Lua ALIAS LuaForGlue)
-    set(ADDITIONAL_GLUE_DEPENDENCIES "LuaForGlue")
-  endif()
+  include(cmake/get_lua.cmake)
 else()
   set(ADDITIONAL_GLUE_DEPENDENCIES "Lua")
 endif()
@@ -84,7 +39,7 @@ endif()
 CPMAddPackage(
   NAME sol2
   URL https://github.com/ThePhD/sol2/archive/v3.2.1.zip
-  VERSION 3.2.1
+  VERSION 3.2.2
   DOWNLOAD_ONLY YES
 )
 

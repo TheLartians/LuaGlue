@@ -107,5 +107,5 @@ To build and run the tests, run the following commands from the project's root.
 ```bash
 cmake -Htest -Bbuild
 cmake --build build -j8
-node build/LuaGlueTests.js
+./build/LuaGlueTests
 ```
