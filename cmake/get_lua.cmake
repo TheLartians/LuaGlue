@@ -5,7 +5,9 @@ CPMAddPackage(
   VERSION ${LUA_VERSION}
   # lua has no CMakeLists.txt
   DOWNLOAD_ONLY YES
-  GITHUB_REPOSITORY lua/lua
+  GITHUB_REPOSITORY thelartians/lua
+  VERSION 5.4.2
+  GIT_TAG v5.4.2-posix
 )
 
 if (Lua_ADDED)
