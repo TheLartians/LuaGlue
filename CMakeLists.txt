@@ -38,7 +38,7 @@ endif()
 
 CPMAddPackage(
   NAME sol2
-  URL https://github.com/ThePhD/sol2/archive/v3.2.1.zip
+  URL https://github.com/ThePhD/sol2/archive/v3.2.2.zip
   VERSION 3.2.2
   DOWNLOAD_ONLY YES
 )
