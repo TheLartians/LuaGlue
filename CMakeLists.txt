@@ -33,12 +33,10 @@ CPMAddPackage(
 if (NOT TARGET Lua)
   CPMAddPackage(
     NAME Lua
-    VERSION 5.3.5
+    VERSION 5.4.2
     # lua has no CMakeLists.txt
     DOWNLOAD_ONLY YES
-    # This patch updates luaconf.h to support iOS and Android
-    GITHUB_REPOSITORY TheLartians/lua
-    GIT_TAG d5a3662fb48e4c1a726b8e93eab2a2520d9b1025
+    GITHUB_REPOSITORY lua/lua
   )
 
   if (Lua_ADDED)
