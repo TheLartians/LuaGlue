@@ -26,8 +26,7 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME Glue
-  VERSION 1.6-a
-  GIT_TAG 721cbb74771be98e78c2eaf2de4751cf9de7cc9f
+  VERSION 1.5.1
   GITHUB_REPOSITORY TheLartians/Glue
 )
 
