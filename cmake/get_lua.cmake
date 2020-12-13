@@ -57,13 +57,13 @@ if (Lua_ADDED)
       $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}>
   )
 
-  if(UNIX)
-    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_POSIX_SPAWN)
-  elseif(ANDROID)
+  if(ANDROID)
     target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
   elseif(IOS)
     target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
   elseif(EMSCRIPTEN OR WIN32)
+  elseif(UNIX)
+    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX)
   endif()
 
   packageProject(
