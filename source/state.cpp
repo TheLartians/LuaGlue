@@ -3,6 +3,7 @@
 #include <glue/keys.h>
 #include <glue/lua/state.h>
 #include <observe/event.h>
+#include <stdint.h>
 
 #include <exception>
 #include <memory>
@@ -120,8 +121,8 @@ namespace glue {
           case sol::type::string:
             return value.as<std::string>();
           case sol::type::number:
-            if (value.is<__int64_t>()) {
-              return value.as<__int64_t>();
+            if (value.is<int64_t>()) {
+              return value.as<int64_t>();
             } else {
               return value.as<double>();
             }
@@ -160,8 +161,8 @@ namespace glue {
 
       struct AnyToSolVisitor
           : revisited::RecursiveVisitor<
-                const __int16_t &, const __uint16_t &, const __int32_t &, const __uint32_t &,
-                const __int64_t &, double, bool, const std::string &, std::string, AnyFunction,
+                const int16_t &, const uint16_t &, const int32_t &, const uint32_t &,
+                const int64_t &, double, bool, const std::string &, std::string, AnyFunction,
                 const glue::Map &, const LuaMap &, const LuaFunction &, sol::object> {
         lua_State *state;
         sol::object result;
@@ -174,27 +175,27 @@ namespace glue {
           return true;
         }
 
-        bool visit(const __int16_t &v) override {
+        bool visit(const int16_t &v) override {
           result = sol::make_object(state, v);
           return true;
         }
 
-        bool visit(const __uint16_t &v) override {
+        bool visit(const uint16_t &v) override {
           result = sol::make_object(state, v);
           return true;
         }
 
-        bool visit(const __int32_t &v) override {
+        bool visit(const int32_t &v) override {
           result = sol::make_object(state, v);
           return true;
         }
 
-        bool visit(const __uint32_t &v) override {
+        bool visit(const uint32_t &v) override {
           result = sol::make_object(state, v);
           return true;
         }
 
-        bool visit(const __int64_t &v) override {
+        bool visit(const int64_t &v) override {
           result = sol::make_object(state, v);
           return true;
         }
