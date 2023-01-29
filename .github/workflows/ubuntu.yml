@@ -24,7 +24,7 @@ jobs:
       run: sudo apt install -y valgrind
 
     - name: configure
-      run: CXX=g++-8 CC=gcc-8 cmake -Htest -Bbuild -DCMAKE_BUILD_TYPE=Debug
+      run: cmake -Htest -Bbuild -DCMAKE_BUILD_TYPE=Debug
 
     - name: build
       run: cmake --build build -j4
@@ -36,7 +36,7 @@ jobs:
       run: valgrind --track-origins=yes --error-exitcode=1 --leak-check=full ./build/LuaGlueTests
 
     - name: configure with code coverage
-      run: CXX=g++-8 CC=gcc-8 cmake -Htest -Bbuild -DENABLE_TEST_COVERAGE=1
+      run: cmake -Htest -Bbuild -DENABLE_TEST_COVERAGE=1
 
     - name: build with code coverage
       run: cmake --build build -j4
