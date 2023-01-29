@@ -1,18 +1,23 @@
 set(LUA_VERSION 5.4.2)
 
-CPMAddPackage(
-  NAME Lua
-  VERSION ${LUA_VERSION}
+cpmaddpackage(
+  NAME
+  Lua
+  VERSION
+  ${LUA_VERSION}
   # lua has no CMakeLists.txt
-  DOWNLOAD_ONLY YES
-  GITHUB_REPOSITORY thelartians/lua
-  VERSION 5.4.2
-  GIT_TAG v5.4.2-posix
-)
+  DOWNLOAD_ONLY
+  YES
+  GITHUB_REPOSITORY
+  thelartians/lua
+  VERSION
+  5.4.2
+  GIT_TAG
+  v5.4.2-posix)
 
-if (Lua_ADDED)
+if(Lua_ADDED)
 
-  set(LUA_LIB_SRCS 
+  set(LUA_LIB_SRCS
       "${Lua_SOURCE_DIR}/lapi.c"
       "${Lua_SOURCE_DIR}/lcode.c"
       "${Lua_SOURCE_DIR}/lctype.c"
@@ -44,35 +49,39 @@ if (Lua_ADDED)
       "${Lua_SOURCE_DIR}/lstrlib.c"
       "${Lua_SOURCE_DIR}/ltablib.c"
       "${Lua_SOURCE_DIR}/lutf8lib.c"
-      "${Lua_SOURCE_DIR}/linit.c"
-  )
+      "${Lua_SOURCE_DIR}/linit.c")
 
-  # create a new independent library LuaForGlue that is aliased to lua 
-  # this allows installing and using LuaGlue without interfering with other installations of lua  
+  # create a new independent library LuaForGlue that is aliased to lua this
+  # allows installing and using LuaGlue without interfering with other
+  # installations of lua
   add_library(LuaForGlue ${LUA_LIB_SRCS})
 
-  target_include_directories(LuaForGlue
-    PUBLIC
-      $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
-      $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}>
-  )
+  target_include_directories(
+    LuaForGlue PUBLIC $<BUILD_INTERFACE:${Lua_SOURCE_DIR}>
+                      $<INSTALL_INTERFACE:include/LuaForGlue-${LUA_VERSION}>)
 
   if(ANDROID)
     target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX LUA_USE_DLOPEN)
   elseif(IOS)
-    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN LUA_USE_POSIX)
+    target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX_SPAWN
+                                                  LUA_USE_POSIX)
   elseif(EMSCRIPTEN OR WIN32)
+
   elseif(UNIX)
     target_compile_definitions(LuaForGlue PRIVATE LUA_USE_POSIX)
   endif()
 
-  packageProject(
-    NAME LuaForGlue
-    VERSION ${LUA_VERSION}
-    BINARY_DIR ${Lua_BINARY_DIR}
-    INCLUDE_DIR ${Lua_SOURCE_DIR}
-    INCLUDE_DESTINATION include/LuaForGlue-${LUA_VERSION}
-  )
+  packageproject(
+    NAME
+    LuaForGlue
+    VERSION
+    ${LUA_VERSION}
+    BINARY_DIR
+    ${Lua_BINARY_DIR}
+    INCLUDE_DIR
+    ${Lua_SOURCE_DIR}
+    INCLUDE_DESTINATION
+    include/LuaForGlue-${LUA_VERSION})
 
   add_library(Lua ALIAS LuaForGlue)
   set(ADDITIONAL_GLUE_DEPENDENCIES "LuaForGlue")
